@@ -1,13 +1,6 @@
-/**
- * Base class for standard API errors.
- */
+
 class ApiError extends Error {
-    /**
-     * @param {number} statusCode - HTTP status code
-     * @param {string} message - Error description message
-     * @param {Array} errors - Array of specific error details or validation errors
-     * @param {string} stack - Custom stack trace if provided
-     */
+
     constructor(statusCode, message = "Something went wrong", errors = [], stack = "") {
         super(message);
         this.statusCode = statusCode;
@@ -36,7 +29,7 @@ class BadRequestError extends ApiError {
 /**
  * 401 Unauthorized Error
  */
-class UnauthorizedError extends ApiError {
+export class UnauthorizedError extends ApiError {
     constructor(message = "Unauthorized", errors = [], stack = "") {
         super(401, message, errors, stack);
     }
@@ -54,7 +47,7 @@ class ForbiddenError extends ApiError {
 /**
  * 404 Not Found Error
  */
-class NotFoundError extends ApiError {
+export class NotFoundError extends ApiError {
     constructor(message = "Not Found", errors = [], stack = "") {
         super(404, message, errors, stack);
     }
@@ -66,6 +59,22 @@ class NotFoundError extends ApiError {
 class InternalServerError extends ApiError {
     constructor(message = "Internal Server Error", errors = [], stack = "") {
         super(500, message, errors, stack);
+    }
+}
+
+export class ValidationError extends ApiError{
+    constructor(error , message){
+        const errorList = error.map(curError => ({
+            name : curError.path[0],
+            message : curError.message
+        }))
+        super(400,message,errorList)
+    }
+}
+
+export class DuplicateError extends ApiError{
+    constructor(error , message){
+        super(409,message,error)
     }
 }
 
