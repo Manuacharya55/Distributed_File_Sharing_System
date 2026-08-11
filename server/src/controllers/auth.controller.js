@@ -23,17 +23,20 @@ export const registerUser = asyncHandler(async (req, res) => {
 
     const hashedPassword = await hashPassword(password);
 
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ name, email, password: hashedPassword });
 
     const { accessToken, refreshToken } = await createToken(user);
 
     user.refreshToken = refreshToken;
     await user.save();
 
-    res.cookie("refresh-token", refreshToken, options).status(201).json(new ApiSuccess(201, {
-        user: user,
+    const data = {
+        _id: user._id,
+        email: user.email,
         token: accessToken
-    }, "User registered successfully"))
+    }
+
+    res.cookie("refresh-token", refreshToken, options).status(201).json(new ApiSuccess(201, data, "User registered successfully"))
 })
 
 export const loginUser = asyncHandler(async (req, res) => {
@@ -55,17 +58,23 @@ export const loginUser = asyncHandler(async (req, res) => {
     existingUser.refreshToken = refreshToken;
     await existingUser.save();
 
-    res.cookie("token", refreshToken, options).status(201).json(new ApiSuccess(201, {
-        user: user,
+    const data = {
+        _id: existingUser._id,
+        email: existingUser.email,
         token: accessToken
-    }, "User registered successfully"))
+    }
+
+    res.cookie("token", refreshToken, options).status(201).json(new ApiSuccess(201, data, "User registered successfully"))
 
 })
 
 export const logoutUser = asyncHandler(async (req, res) => {
     const { _id } = req.user;
 
-    const existingUser = await User.findById(_id).select("+refreshToken");
+    const existingUser = await User.findById(_id).select("-password -otp");
+
+    existingUser.refreshToken = null
+    await existingUser.save();
 
     res.clearCookie('token')
     res.status(201).json(new ApiSuccess(201, null, "user logged out successfully"))

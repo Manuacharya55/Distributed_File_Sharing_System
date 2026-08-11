@@ -2,10 +2,10 @@ import { UnauthorizedError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
 
-const authMiddleware = asyncHandler(async(req,res,next)=>{
-    const token = req.headers.authorization.split(" ")[0];
+export const verifyJWT = asyncHandler(async(req,res,next)=>{
+    const token = req.headers.authorization.split(" ")[1];
 
-    const decoded = jwt.verify(token,process.env.JWT_SECRET);
+    const decoded = jwt.verify(token,process.env.ACCESS_TOKEN_SECRET);
 
     if(!decoded) throw new UnauthorizedError()
     

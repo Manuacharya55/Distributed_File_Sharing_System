@@ -12,7 +12,7 @@ const userSchema = new Schema({
         type: String,
         require: true,
     },
-    accessToken: {
+    refreshToken: {
         type: String,
         default: null
     },

@@ -1,5 +1,5 @@
 
-class ApiError extends Error {
+export class ApiError extends Error {
 
     constructor(statusCode, message = "Something went wrong", errors = [], stack = "") {
         super(message);
@@ -20,7 +20,7 @@ class ApiError extends Error {
 /**
  * 400 Bad Request Error
  */
-class BadRequestError extends ApiError {
+export class BadRequestError extends ApiError {
     constructor(message = "Bad Request", errors = [], stack = "") {
         super(400, message, errors, stack);
     }
@@ -38,7 +38,7 @@ export class UnauthorizedError extends ApiError {
 /**
  * 403 Forbidden Error
  */
-class ForbiddenError extends ApiError {
+export class ForbiddenError extends ApiError {
     constructor(message = "Forbidden", errors = [], stack = "") {
         super(403, message, errors, stack);
     }
@@ -56,7 +56,7 @@ export class NotFoundError extends ApiError {
 /**
  * 500 Internal Server Error
  */
-class InternalServerError extends ApiError {
+export class InternalServerError extends ApiError {
     constructor(message = "Internal Server Error", errors = [], stack = "") {
         super(500, message, errors, stack);
     }
@@ -64,6 +64,7 @@ class InternalServerError extends ApiError {
 
 export class ValidationError extends ApiError{
     constructor(error , message){
+        console.log(error)
         const errorList = error.map(curError => ({
             name : curError.path[0],
             message : curError.message
@@ -78,11 +79,4 @@ export class DuplicateError extends ApiError{
     }
 }
 
-module.exports = {
-    ApiError,
-    BadRequestError,
-    UnauthorizedError,
-    ForbiddenError,
-    NotFoundError,
-    InternalServerError
-};
+

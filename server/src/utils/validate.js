@@ -1,11 +1,11 @@
-import z, { success } from "zod"
+import z from "zod"
 
-export const validateData = (data) => {
-    const result = z.safeParse(data);
+export const validateData = (schema, data) => {
+    const result = schema.safeParse(data);
 
     return {
         success : result.success,
         data : result.data || null,
-        errors : result.error.issues || null
+        errors : result.error ? result.error.issues : null
     }
 }
