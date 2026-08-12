@@ -1,6 +1,7 @@
 import express from "express"
 import cookieParser from "cookie-parser";
 import authRouter from "./routes/auth.router.js"
+import fileRouter from "./routes/file.router.js"
 import { globalError } from "./utils/globalError.js";
 
 const app = express();
@@ -16,6 +17,7 @@ app.get("/health",(req,res)=>{
 })
 
 app.use("/api/v1/auth",authRouter)
+app.use("/api/v1/file",fileRouter)
 
 app.use(globalError)
 
