@@ -2,80 +2,79 @@ import { Link } from 'react-router-dom'
 
 const Footer = () => {
   return (
-    <footer className="w-full bg-black text-white py-12 mt-auto border-t border-gray-800">
+    <footer className="w-full bg-white text-black py-16 mt-auto border-t-4 border-black font-sans">
       <div className="max-w-7xl mx-auto px-6 md:px-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-          
-          {/* Brand & Description */}
-          <div className="col-span-1 md:col-span-2">
-            <Link to="/" className="text-2xl font-bold tracking-tight hover:opacity-80 transition-opacity">
-              <span className="text-white">Share</span>
-              <span className="text-gray-400">Flow</span>
-            </Link>
-            <p className="mt-4 text-sm text-gray-400 max-w-sm leading-relaxed">
-              A secure, distributed file sharing system. Seamlessly share, organize, and access your files and folders from anywhere.
-            </p>
-          </div>
-
-          {/* Quick Links */}
+        
+        {/* Massive Brand Header */}
+        <div className="mb-16 pb-8 border-b-4 border-black flex flex-col items-start md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h3 className="text-sm font-semibold tracking-wider uppercase mb-4 text-gray-200">
-              Navigation
+            <h2 className="text-6xl md:text-8xl font-black tracking-tighter uppercase leading-none hover:-rotate-1 transition-transform">
+              SHARE<br/>
+              <span className="bg-[#FF90E8] px-2 border-4 border-black shadow-[6px_6px_0_0_#000] inline-block -rotate-2 mt-2">FLOW</span>
+            </h2>
+          </div>
+          <p className="text-xl font-bold max-w-sm leading-tight border-2 border-black p-4 bg-[#FFC900] shadow-[4px_4px_0_0_#000]">
+            The loudest, funkiest distributed file system on the web. Drop your files like it's hot.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12 font-bold text-lg">
+          {/* Quick Links */}
+          <div className="col-span-2 md:col-span-1">
+            <h3 className="text-2xl font-black uppercase mb-6 bg-black text-white inline-block px-3 py-1 -rotate-1 border-2 border-black">
+              Navigate
             </h3>
-            <ul className="flex flex-col gap-2">
-              <li>
-                <Link to="/" className="text-sm text-gray-400 hover:text-white transition-colors duration-200">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link to="/files" className="text-sm text-gray-400 hover:text-white transition-colors duration-200">
-                  Files
-                </Link>
-              </li>
-              <li>
-                <Link to="/folders" className="text-sm text-gray-400 hover:text-white transition-colors duration-200">
-                  Folders
-                </Link>
-              </li>
+            <ul className="flex flex-col gap-4">
+              {['Home', 'Files', 'Folders'].map(link => (
+                <li key={link}>
+                  <Link 
+                    to={link === 'Home' ? '/' : `/${link.toLowerCase()}`} 
+                    className="hover:underline decoration-4 underline-offset-4 decoration-[#FF90E8] hover:text-[#FF90E8] transition-colors flex items-center group"
+                  >
+                    <span className="w-4 h-4 bg-black group-hover:bg-[#FF90E8] border-2 border-black rounded-full mr-3 group-hover:scale-125 transition-all"></span>
+                    {link}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           {/* Legal / Social */}
-          <div>
-            <h3 className="text-sm font-semibold tracking-wider uppercase mb-4 text-gray-200">
+          <div className="col-span-2 md:col-span-1">
+            <h3 className="text-2xl font-black uppercase mb-6 bg-black text-white inline-block px-3 py-1 rotate-1 border-2 border-black">
               Legal
             </h3>
-            <ul className="flex flex-col gap-2">
-              <li>
-                <a href="#" className="text-sm text-gray-400 hover:text-white transition-colors duration-200">
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-gray-400 hover:text-white transition-colors duration-200">
-                  Terms of Service
-                </a>
-              </li>
+            <ul className="flex flex-col gap-4">
+              {['Privacy Policy', 'Terms of Service'].map(link => (
+                <li key={link}>
+                  <a 
+                    href="#" 
+                    className="hover:underline decoration-4 underline-offset-4 decoration-[#FFC900] hover:text-[#FFC900] transition-colors flex items-center group"
+                  >
+                    <span className="w-4 h-4 bg-black group-hover:bg-[#FFC900] border-2 border-black mr-3 group-hover:rotate-45 transition-all"></span>
+                    {link}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-gray-500">
-            &copy; {new Date().getFullYear()} ShareFlow. All rights reserved.
+        <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
+          <p className="font-bold border-2 border-black px-4 py-2 bg-white shadow-[4px_4px_0_0_#000]">
+            &copy; {new Date().getFullYear()} SHAREFLOW. ALL RIGHTS RESERVED.
           </p>
           <div className="flex gap-4">
-            <a href="#" className="text-gray-500 hover:text-white transition-colors">
+            <a href="#" className="w-12 h-12 flex items-center justify-center bg-white border-2 border-black shadow-[4px_4px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_0_#000] active:shadow-none active:translate-y-[4px] active:translate-x-[4px] transition-all rounded-full group">
               <span className="sr-only">Twitter</span>
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <svg className="w-6 h-6 group-hover:text-[#FF90E8] transition-colors" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
               </svg>
             </a>
-            <a href="#" className="text-gray-500 hover:text-white transition-colors">
+            <a href="#" className="w-12 h-12 flex items-center justify-center bg-white border-2 border-black shadow-[4px_4px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_0_#000] active:shadow-none active:translate-y-[4px] active:translate-x-[4px] transition-all rounded-full group">
               <span className="sr-only">GitHub</span>
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <svg className="w-6 h-6 group-hover:text-[#FFC900] transition-colors" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
               </svg>
             </a>
