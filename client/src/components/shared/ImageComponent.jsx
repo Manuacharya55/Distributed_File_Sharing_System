@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { postMultipartRequest } from '../../api/api';
 
 const ImageComponent = () => {
   const [selectedImages, setSelectedImages] = useState([]);
@@ -22,13 +23,18 @@ const ImageComponent = () => {
     setPreviewUrls((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
-  const handleUpload = () => {
+  const handleUpload = async() => {
     if (selectedImages.length === 0) {
       alert('Please select at least one file to upload.');
       return;
     }
     console.log('Uploading files:', selectedImages);
-    alert(`Successfully simulated upload of ${selectedImages.length} file(s)!`);
+    const formImageData = new FormData();
+    selectedImages.forEach((file) => {
+      formImageData.append("files", file);
+    });
+    const response = await postMultipartRequest("/file/", formImageData);
+    console.log(response);
     setSelectedImages([]);
     setPreviewUrls([]);
   };

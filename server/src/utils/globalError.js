@@ -7,7 +7,7 @@ export const globalError = (err, req, res, next) => {
 
     // Optional: stack trace in non-production environments
     const stack = process.env.NODE_ENV !== "production" ? err.stack : undefined;
-
+    console.log("err",err)
     res.status(statusCode).json({
         success: false,
         statusCode,
