@@ -64,7 +64,6 @@ export class InternalServerError extends ApiError {
 
 export class ValidationError extends ApiError{
     constructor(error , message){
-        console.log(error)
         const errorList = error.map(curError => ({
             name : curError.path[0],
             message : curError.message

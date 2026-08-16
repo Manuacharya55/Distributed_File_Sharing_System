@@ -1,14 +1,25 @@
 import User from "../models/user.model.js";
+import redisIO from "../redis/connection.js";
 import { DuplicateError, NotFoundError, UnauthorizedError } from "../utils/ApiError.js";
 import { ApiSuccess } from "../utils/ApiSuccess.js";
 import { compareHashedPassword, hashPassword } from "../utils/argon.js";
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { createToken } from "../utils/JWT.js";
+import { emailQueue } from "../redis/queue.js";
+import { generateOTPTemplate } from "../templates/otp.template.js";
 
 const options = {
     httpOnly: true,
     secure: true,
     sameSite: 'Strict',
+}
+
+const generateOtp = () => {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
+const setOtpToRedis = async (userId, otp) => {
+    await redisIO.set(userId, otp, 'EX', 900)
 }
 
 export const registerUser = asyncHandler(async (req, res) => {
@@ -36,6 +47,17 @@ export const registerUser = asyncHandler(async (req, res) => {
         token: accessToken
     }
 
+    const otp = generateOtp();
+    const htmlTemplate = generateOTPTemplate(otp);
+
+    await setOtpToRedis(user._id.toString(), otp);
+    console.log(await redisIO.get(user._id.toString()))
+    const job = await emailQueue.add("send-otp-email", {
+        email: user.email,
+        subject: "Your OTP Verification Code",
+        htmlTemplate
+    }, { attempts: 3, backoff: { type: 'exponential', delay: 1000 } });
+   console.log(job)
     res.cookie("refresh-token", refreshToken, options).status(201).json(new ApiSuccess(201, data, "User registered successfully"))
 })
 
@@ -51,6 +73,10 @@ export const loginUser = asyncHandler(async (req, res) => {
 
     if (!isValidPassword) {
         throw new UnauthorizedError("invalid credentials")
+    }
+
+    if (!existingUser.isVerified) {
+        throw new UnauthorizedError("Email not verified. Please verify your email before logging in.");
     }
 
     const { accessToken, refreshToken } = await createToken(existingUser);
@@ -79,3 +105,25 @@ export const logoutUser = asyncHandler(async (req, res) => {
     res.clearCookie('token')
     res.status(201).json(new ApiSuccess(201, null, "user logged out successfully"))
 })
+
+export const verifyEmail = asyncHandler(async (req, res) => {
+    const { otp } = req.body;
+    const userId = req.user._id.toString();
+
+    const cachedOtp = await redisIO.get(userId);
+
+    if (!cachedOtp || cachedOtp !== otp) {
+        throw new UnauthorizedError("Invalid OTP");
+    }
+
+    const user = await User.findById(userId);
+    
+    if (!user) {
+        throw new NotFoundError("User not found");
+    }
+
+    user.isVerified = true;
+    await user.save();
+
+    res.status(200).json(new ApiSuccess(200, null, "Email verified successfully"));
+});

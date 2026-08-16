@@ -4,8 +4,10 @@ import { loginSchema } from "../schema/schema";
 import LoginForm from '../components/LoginForm'
 import { postRequest } from "../../../api/api";
 import { Link, useNavigate } from "react-router-dom"
+import { useAuth } from "../../../context/AuthContext";
 
 const LoginPage = () => {
+  const {setToken} = useAuth();
   const {
     register,
     handleSubmit,
@@ -17,9 +19,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   const handleLoginUser = async (data) => {
-    console.log(data)
     const response = await postRequest("/auth/login", data);
-    console.log(response);
     setToken(response.data.token)
     navigate("/")
   };

@@ -29,7 +29,6 @@ const fileFilter = (req, file, cb) => {
     if (extName && mimeType) {
         return cb(null, true);
     } else {
-        console.log(mimeType,extName)
         cb(new Error(`Only allowed formats: ${fileExtensions.join(', ')}`));
     }
 };

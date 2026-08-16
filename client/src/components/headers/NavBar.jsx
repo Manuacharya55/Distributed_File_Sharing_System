@@ -1,15 +1,18 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useState } from 'react'
+import { useAuth } from '../../context/AuthContext'
+
 
 const NavBar = () => {
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
+  const { token, setToken } = useAuth()
 
   const navLinks = [
     { name: 'Dashboard', path: '/' },
     { name: 'Files', path: '/files' },
     { name: 'Folders', path: '/folders' },
-    { name: 'Profile', path: '/profile' }
+   [{ name: 'Profile', path: '/profile' }]
   ]
 
   const isActive = (path) => location.pathname === path
@@ -65,22 +68,26 @@ const NavBar = () => {
           <div className="h-1 bg-black w-full my-2 border-t-2 border-b-2 border-black" style={{ height: '4px' }}></div>
 
           <div className="flex flex-col gap-3">
-             <Link
-              to="/login"
-              onClick={() => setMenuOpen(false)}
-              className="w-full py-3 px-4 bg-[#FF90E8] border-2 border-black text-black font-black text-lg uppercase text-center shadow-[4px_4px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_0_#000] active:shadow-none active:translate-y-[4px] active:translate-x-[4px] transition-all"
-            >
-              Login
-            </Link>
-            <button
-              onClick={() => {
-                console.log('Logout clicked');
-                setMenuOpen(false);
-              }}
-              className="w-full py-3 px-4 bg-red-400 border-2 border-black text-black font-black text-lg uppercase shadow-[4px_4px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_0_#000] active:shadow-none active:translate-y-[4px] active:translate-x-[4px] transition-all"
-            >
-              Logout
-            </button>
+            {!token ? (
+              <Link
+                to="/login"
+                onClick={() => setMenuOpen(false)}
+                className="w-full py-3 px-4 bg-[#FF90E8] border-2 border-black text-black font-black text-lg uppercase text-center shadow-[4px_4px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_0_#000] active:shadow-none active:translate-y-[4px] active:translate-x-[4px] transition-all"
+              >
+                Login
+              </Link>
+            ) : (
+              <button
+                onClick={() => {
+                  console.log('Logout clicked');
+                  setToken(null);
+                  setMenuOpen(false);
+                }}
+                className="w-full py-3 px-4 bg-red-400 border-2 border-black text-black font-black text-lg uppercase shadow-[4px_4px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_0_#000] active:shadow-none active:translate-y-[4px] active:translate-x-[4px] transition-all"
+              >
+                Logout
+              </button>
+            )}
           </div>
         </div>
       </div>

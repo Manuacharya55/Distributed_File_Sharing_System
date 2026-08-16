@@ -1,19 +1,28 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { postRequest } from '../../../api/api';
 
 const VerifyEmailPage = () => {
   const [otp, setOtp] = useState('');
 
-  const handleSubmit = (e) => {
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Verifying OTP:', otp);
+    try {
+      const response = await postRequest('/auth/verify-email', { otp });
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Failed to verify OTP:', error);
+      alert(error?.response?.data?.message || 'Invalid or expired OTP');
+    }
   };
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-6">
       <div className="w-full max-w-md bg-white border-4 border-black p-8 shadow-[8px_8px_0_0_#000]">
         <h1 className="text-3xl font-black uppercase mb-2">Verify Email</h1>
-        <p className="text-gray-600 mb-8 font-bold">Enter the 6-digit code sent to your email.</p>
+        <p className="text-gray-600 mb-8 font-bold">Enter the 4-digit code sent to your email.</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
@@ -25,8 +34,8 @@ const VerifyEmailPage = () => {
               id="otp"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
-              maxLength={6}
-              placeholder="000000"
+              maxLength={4}
+              placeholder="0000"
               className="w-full p-3 border-2 border-black font-mono text-center text-2xl tracking-[0.5em] focus:outline-none focus:shadow-[4px_4px_0_0_#000] transition-shadow bg-[#f8f9fa]"
               required
             />
@@ -41,12 +50,6 @@ const VerifyEmailPage = () => {
         </form>
 
         <div className="mt-6 text-center">
-          <p className="text-sm font-bold">
-            Didn't receive the code?{' '}
-            <button className="text-blue-600 hover:underline uppercase tracking-wide cursor-pointer">
-              Resend Code
-            </button>
-          </p>
           <div className="mt-4">
              <Link to="/login" className="text-sm font-bold hover:underline">
                &larr; Back to Login

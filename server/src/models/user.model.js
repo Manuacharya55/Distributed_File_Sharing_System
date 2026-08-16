@@ -19,10 +19,6 @@ const userSchema = new Schema({
     isVerified: {
         type: Boolean,
         default: false
-    },
-    otp: {
-        type: String,
-        default: null
     }
 }, { timestamps: true });
 
