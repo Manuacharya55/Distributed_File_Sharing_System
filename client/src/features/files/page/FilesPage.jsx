@@ -1,29 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { getRequest } from '../../api/api';
-import ImageComponent from '../../components/shared/ImageComponent';
+import React, { useEffect, useState } from 'react';
+import { getRequest } from '../../../api/api';
+import ImageComponent from '../../../components/shared/ImageComponent';
 
-const FolderDetailsPage = () => {
-  const { folderId } = useParams();
-  
-  const [folder, setFolder] = useState(null);
+const FilesPage = () => {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Upload Modal State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
-  const fetchFolderDetails = async () => {
+  const fetchFiles = async () => {
     try {
       setLoading(true);
-      const response = await getRequest(`/folder/${folderId}`);
-      if (response && response.data) {
-        setFolder(response.data.folder);
-        setFiles(response.data.files || []);
+      const response = await getRequest('/file');
+      if (response && response.data && response.data.files) {
+          setFiles(response.data.files);
       }
     } catch (err) {
-      setError("Failed to fetch folder details.");
+      setError("Failed to fetch files.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -31,8 +25,13 @@ const FolderDetailsPage = () => {
   };
 
   useEffect(() => {
-    fetchFolderDetails();
-  }, [folderId]);
+    fetchFiles();
+  }, []);
+
+  const handleUploadSuccess = () => {
+    setIsUploadModalOpen(false);
+    fetchFiles();
+  };
 
   const getFileColor = (index) => {
     const colors = ['bg-[#FF90E8]', 'bg-[#FFC900]', 'bg-[#00FF00]', 'bg-[#8A2BE2]', 'bg-cyan-300', 'bg-red-400'];
@@ -42,6 +41,7 @@ const FolderDetailsPage = () => {
   const handleDownload = async (e, fileUrl, originalName) => {
     e.preventDefault();
     try {
+      // Fetch the file to create a local blob for forcing the download
       const response = await fetch(fileUrl, {
         method: 'GET',
       });
@@ -54,16 +54,19 @@ const FolderDetailsPage = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
+      // Ensure we use a valid filename with extension
       const safeFilename = originalName || fileUrl.split('/').pop() || 'download';
       link.setAttribute('download', safeFilename);
       document.body.appendChild(link);
       link.click();
       
+      // Cleanup
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Frontend download failed (Likely a CORS issue with the S3 bucket): ", error);
       alert("Download failed. Please ensure your AWS S3 bucket has CORS enabled for GET requests, or download the file manually from the new tab.");
+      // Fallback: Open in a new tab if fetch fails
       const fallbackLink = document.createElement('a');
       fallbackLink.href = fileUrl;
       fallbackLink.target = '_blank';
@@ -74,50 +77,18 @@ const FolderDetailsPage = () => {
     }
   };
 
-  const handleUploadSuccess = () => {
-    setIsUploadModalOpen(false);
-    fetchFolderDetails();
-  };
-
-  if (loading) {
-    return <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 text-3xl font-black uppercase text-center mt-20 animate-pulse">Loading folder...</div>;
-  }
-
-  if (error) {
-    return <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 text-2xl font-bold uppercase text-white bg-red-500 border-4 border-black p-6 shadow-[8px_8px_0_0_#000]">{error}</div>;
-  }
-
-  const folderName = folder?.name || "Unknown Folder";
-
   return (
-    <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 animate-in fade-in duration-500 relative">
-      
-      {/* Breadcrumb / Header */}
-      <div className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
         <div>
-          <Link to="/folders" className="inline-flex items-center text-sm font-black tracking-widest text-black hover:bg-[#FFC900] border-2 border-transparent hover:border-black hover:shadow-[4px_4px_0_0_#000] px-4 py-2 transition-all mb-6 group uppercase">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back to Folders
-          </Link>
-          <div className="flex items-center gap-6">
-            <div className="w-16 h-16 bg-white border-4 border-black shadow-[4px_4px_0_0_#000] flex items-center justify-center text-black">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-black uppercase mb-1">
-                {folderName}
-              </h1>
-              <p className="text-sm font-bold bg-[#FF90E8] border-2 border-black inline-block px-3 py-1 shadow-[2px_2px_0_0_#000] uppercase">
-                {files.length} items
-              </p>
-            </div>
-          </div>
+          <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-black uppercase mb-4 hover:rotate-1 transition-transform inline-block">
+            All Files
+          </h1>
+          <br/>
+          <p className="text-xl font-bold bg-[#FFC900] border-2 border-black px-4 py-2 shadow-[4px_4px_0_0_#000] inline-block">
+            Welcome to the funk zone.
+          </p>
         </div>
-        
         <button 
           onClick={() => setIsUploadModalOpen(true)}
           className="inline-flex items-center justify-center px-8 py-4 bg-[#00FF00] text-black border-4 border-black font-black uppercase text-xl shadow-[6px_6px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[8px_8px_0_0_#000] active:shadow-none active:translate-y-[6px] active:translate-x-[6px] transition-all gap-3"
@@ -129,18 +100,25 @@ const FolderDetailsPage = () => {
         </button>
       </div>
 
-      {files.length === 0 ? (
+      {loading ? (
+        <div className="text-3xl font-black uppercase text-center mt-20 animate-pulse">Loading files...</div>
+      ) : error ? (
+        <div className="text-2xl font-bold uppercase text-white bg-red-500 border-4 border-black p-6 shadow-[8px_8px_0_0_#000]">
+          {error}
+        </div>
+      ) : files.length === 0 ? (
         <div className="text-3xl font-black uppercase text-center mt-20 p-12 bg-white border-4 border-black shadow-[12px_12px_0_0_#000]">
-          This folder is empty. Time to upload!
+          No files found. Time to upload!
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {files.map((file, index) => {
+            // Extract filename from key since originalName might be stripped by Mongoose schema
             let displayFileName = 'Unknown File';
             let downloadFileName = 'download';
             if (file.key) {
                const keyParts = file.key.split('/');
-               downloadFileName = keyParts[keyParts.length - 1]; 
+               downloadFileName = keyParts[keyParts.length - 1]; // e.g. 12345-userId-image.jpg
                const nameParts = downloadFileName.split('-');
                displayFileName = nameParts.length > 2 ? nameParts.slice(2).join('-') : downloadFileName;
             } else if (file.fileUrl) {
@@ -198,16 +176,15 @@ const FolderDetailsPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 overflow-y-auto">
           <div className="w-full max-w-5xl">
             <ImageComponent 
-              folderId={folderId} 
+              folderId={null} 
               onUploadSuccess={handleUploadSuccess} 
               onCancel={() => setIsUploadModalOpen(false)} 
             />
           </div>
         </div>
       )}
-
     </div>
   );
 };
 
-export default FolderDetailsPage;
+export default FilesPage;

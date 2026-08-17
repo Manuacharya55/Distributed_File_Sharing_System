@@ -1,9 +1,13 @@
 import express from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser";
+
+import { globalError } from "./utils/globalError.js";
+
 import authRouter from "./routes/auth.router.js"
 import fileRouter from "./routes/file.router.js"
-import { globalError } from "./utils/globalError.js";
+import folderRouter from "./routes/folder.router.js"
+import dashboardRouter from "./routes/dashboard.router.js"
 
 const app = express();
 
@@ -18,8 +22,12 @@ app.get("/health",(req,res)=>{
     })
 })
 
+
+
 app.use("/api/v1/auth",authRouter)
 app.use("/api/v1/file",fileRouter)
+app.use("/api/v1/folder",folderRouter)
+app.use("/api/v1/dashboard",dashboardRouter)
 
 app.use(globalError)
 

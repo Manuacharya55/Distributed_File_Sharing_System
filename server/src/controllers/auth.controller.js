@@ -57,7 +57,6 @@ export const registerUser = asyncHandler(async (req, res) => {
         subject: "Your OTP Verification Code",
         htmlTemplate
     }, { attempts: 3, backoff: { type: 'exponential', delay: 1000 } });
-   console.log(job)
     res.cookie("refresh-token", refreshToken, options).status(201).json(new ApiSuccess(201, data, "User registered successfully"))
 })
 

@@ -12,7 +12,7 @@ const NavBar = () => {
     { name: 'Dashboard', path: '/' },
     { name: 'Files', path: '/files' },
     { name: 'Folders', path: '/folders' },
-   [{ name: 'Profile', path: '/profile' }]
+    { name: 'Profile', path: '/profile' }
   ]
 
   const isActive = (path) => location.pathname === path
@@ -79,7 +79,6 @@ const NavBar = () => {
             ) : (
               <button
                 onClick={() => {
-                  console.log('Logout clicked');
                   setToken(null);
                   setMenuOpen(false);
                 }}

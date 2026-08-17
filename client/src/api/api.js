@@ -77,13 +77,12 @@ export const deleteRequest = async (url) => {
 
 export const postMultipartRequest = async (url, formData) => {
     try {
-        console.log(formData)
         const response = await axios.post(url, formData, {
             headers: {
                 "Content-Type": "multipart/form-data"
             }
         });
-        console.log(response)
+
         if (response) {
             return response.data;
         }

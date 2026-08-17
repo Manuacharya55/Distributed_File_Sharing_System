@@ -14,7 +14,6 @@ const ChangePasswordPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Changing password...', passwords);
   };
 
   return (

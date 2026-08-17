@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { postMultipartRequest } from '../../api/api';
 
-const ImageComponent = () => {
+const ImageComponent = ({ folderId, onUploadSuccess, onCancel }) => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [previewUrls, setPreviewUrls] = useState([]);
   const fileInputRef = useRef(null);
@@ -28,19 +28,32 @@ const ImageComponent = () => {
       alert('Please select at least one file to upload.');
       return;
     }
-    console.log('Uploading files:', selectedImages);
     const formImageData = new FormData();
     selectedImages.forEach((file) => {
       formImageData.append("files", file);
     });
+    if (folderId) {
+      formImageData.append("folder", folderId);
+    }
     const response = await postMultipartRequest("/file/", formImageData);
-    console.log(response);
     setSelectedImages([]);
     setPreviewUrls([]);
+    if (onUploadSuccess) onUploadSuccess();
   };
 
   return (
     <div className="max-w-5xl mx-auto my-12 bg-white border-4 border-black shadow-[12px_12px_0_0_#000] p-8 md:p-12 relative">
+      {onCancel && (
+        <button 
+          onClick={onCancel}
+          className="absolute top-4 right-4 bg-white border-2 border-black p-2 hover:bg-gray-200 transition-colors shadow-[2px_2px_0_0_#000] z-50"
+          title="Close"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
       
       <div className="mb-12 text-center relative z-10">
         <h2 className="text-5xl md:text-6xl font-black tracking-tighter text-black uppercase mb-4 inline-block hover:-rotate-1 transition-transform">

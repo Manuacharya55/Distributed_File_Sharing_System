@@ -7,7 +7,12 @@ const fileSchema = new Schema(
       ref: "Users",
       required: true,
     },
-    fileurl: {
+    folder: {
+      type: Schema.Types.ObjectId,
+      ref: "Folder",
+      default: null,
+    },
+    fileUrl: {
       type: String,
       required: true,
     },
@@ -15,7 +20,7 @@ const fileSchema = new Schema(
       type: String,
       required: true,
     },
-    mimetype: {
+    mimeType: {
       type: String,
       required: true,
     },
@@ -27,6 +32,10 @@ const fileSchema = new Schema(
       type: String,
       required: true,
     },
+    originalName : {
+      type: String,
+      required: true
+    }
   },
   { timestamps: true }
 );

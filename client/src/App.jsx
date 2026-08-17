@@ -3,7 +3,7 @@ import LoginPage from "./features/auth/pages/LoginPage"
 import RegisterPage from "./features/auth/pages/RegisterPage"
 import NotFound from "./features/NotFound"
 import Footer from "./components/headers/Footer"
-import ImageComponent from "./components/shared/ImageComponent"
+import FilesPage from "./features/files/page/FilesPage"
 import Dashboard from "./features/dashboard/Dashboard"
 import FoldersPage from "./features/folders/FoldersPage"
 import FolderDetailsPage from "./features/folders/FolderDetailsPage"
@@ -29,7 +29,7 @@ function App() {
               <Route element={<ProtectedLayout />}>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/files" element={<ImageComponent/>} />
+                <Route path="/files" element={<FilesPage/>} />
                 <Route path="/folders" element={<FoldersPage/>} />
                 <Route path="/folders/:folderId" element={<FolderDetailsPage />} />
                 <Route path="/change-password" element={<ChangePasswordPage />} />

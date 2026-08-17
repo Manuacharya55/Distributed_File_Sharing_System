@@ -1,20 +1,45 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { getRequest } from '../../api/api';
 
 const Dashboard = () => {
-  const stats = [
-    { label: 'Total Files', count: 142, icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', color: 'bg-[#FF90E8]' },
-    { label: 'Folders', count: 24, icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z', color: 'bg-[#FFC900]' },
-    { label: 'Images', count: 85, icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z', color: 'bg-[#8A2BE2]' },
-    { label: 'Documents', count: 33, icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', color: 'bg-[#00FF00]' },
-  ];
+  const [dashboardData, setDashboardData] = useState({ stats: null, recentActivity: [] });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const recentEvents = [
-    { id: 1, action: 'Uploaded', item: 'project_presentation.pdf', time: '2 hours ago', type: 'file' },
-    { id: 2, action: 'Created Folder', item: 'Q3_Financials', time: '5 hours ago', type: 'folder' },
-    { id: 3, action: 'Uploaded', item: 'team_photo.jpg', time: 'Yesterday', type: 'image' },
-    { id: 4, action: 'Deleted', item: 'old_notes.txt', time: 'Yesterday', type: 'delete' },
-    { id: 5, action: 'Shared', item: 'Design_Assets', time: '2 days ago', type: 'share' },
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        setLoading(true);
+        const response = await getRequest('/dashboard');
+        if (response && response.data) {
+          setDashboardData(response.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
+        setError("Failed to load dashboard data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboard();
+  }, []);
+
+  if (loading) {
+    return <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 text-3xl font-black uppercase text-center mt-20 animate-pulse">Loading dashboard...</div>;
+  }
+
+  if (error) {
+    return <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 text-2xl font-bold uppercase text-white bg-red-500 border-4 border-black p-6 shadow-[8px_8px_0_0_#000]">{error}</div>;
+  }
+
+  const { stats, recentActivity } = dashboardData;
+
+  const statsDisplay = [
+    { label: 'Total Files', count: stats?.totalFiles || 0, icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', color: 'bg-[#FF90E8]' },
+    { label: 'Folders', count: stats?.totalFolders || 0, icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z', color: 'bg-[#FFC900]' },
+    { label: 'Images', count: stats?.totalImages || 0, icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z', color: 'bg-[#8A2BE2]' },
+    { label: 'Documents', count: stats?.totalDocuments || 0, icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', color: 'bg-[#00FF00]' },
   ];
 
   return (
@@ -30,20 +55,12 @@ const Dashboard = () => {
             Your files, but cooler.
           </p>
         </div>
-        <Link 
-          to="/files" 
-          className="inline-flex items-center justify-center px-8 py-4 bg-[#FF90E8] text-black border-2 border-black font-black uppercase text-xl shadow-[6px_6px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[8px_8px_0_0_#000] active:shadow-none active:translate-y-[6px] active:translate-x-[6px] transition-all gap-3"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
-          </svg>
-          Upload Now
-        </Link>
+        {/* Upload button removed as requested */}
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-        {stats.map((stat, index) => (
+        {statsDisplay.map((stat, index) => (
           <div key={index} className="bg-white border-4 border-black p-6 flex flex-col justify-between shadow-[8px_8px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[10px_10px_0_0_#000] active:shadow-none active:translate-y-[8px] active:translate-x-[8px] transition-all relative group cursor-default">
             <div className="flex justify-between items-start mb-6">
               <div className={`w-14 h-14 ${stat.color} border-2 border-black flex items-center justify-center text-black shadow-[4px_4px_0_0_#000] group-hover:-rotate-12 transition-transform`}>
@@ -67,30 +84,33 @@ const Dashboard = () => {
             Recent Activity
           </h2>
           <span className="font-bold bg-white border-2 border-black px-4 py-1 uppercase shadow-[4px_4px_0_0_#000]">
-            Last 7 Days
+            Latest Events
           </span>
         </div>
         
-        <div className="divide-y-4 divide-black">
-          {recentEvents.map((event) => (
-            <div key={event.id} className="px-8 py-6 flex flex-col md:flex-row md:items-center justify-between hover:bg-gray-50 transition-colors duration-200">
-              <div className="flex items-center gap-6">
-                <div className="w-4 h-4 bg-black rounded-full shadow-[2px_2px_0_0_#FF90E8]"></div>
-                <div className="text-lg font-bold">
-                  <span className="text-black uppercase bg-yellow-200 px-2 py-1 border-2 border-black mr-2">{event.action}</span>
-                  <span className="text-gray-800 underline decoration-4 decoration-[#FF90E8]">{event.item}</span>
+        {recentActivity && recentActivity.length > 0 ? (
+          <div className="divide-y-4 divide-black">
+            {recentActivity.map((event) => (
+              <div key={event.id} className="px-8 py-6 flex flex-col md:flex-row md:items-center justify-between hover:bg-gray-50 transition-colors duration-200">
+                <div className="flex items-center gap-6">
+                  <div className="w-4 h-4 bg-black rounded-full shadow-[2px_2px_0_0_#FF90E8]"></div>
+                  <div className="text-lg font-bold">
+                    <span className="text-black uppercase bg-yellow-200 px-2 py-1 border-2 border-black mr-2">{event.action}</span>
+                    <span className="text-gray-800 underline decoration-4 decoration-[#FF90E8]">{event.item}</span>
+                  </div>
                 </div>
+                <span className="text-sm font-black text-gray-500 uppercase mt-2 md:mt-0 bg-gray-200 px-3 py-1 border-2 border-black">
+                  {new Date(event.time).toLocaleString()}
+                </span>
               </div>
-              <span className="text-sm font-black text-gray-500 uppercase mt-2 md:mt-0 bg-gray-200 px-3 py-1 border-2 border-black">{event.time}</span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="px-8 py-12 text-center text-xl font-bold uppercase text-gray-500">
+            No recent activity found.
+          </div>
+        )}
         
-        <div className="px-8 py-6 bg-black text-center group cursor-pointer border-t-4 border-black hover:bg-gray-900 transition-colors">
-          <button className="text-xl font-black text-white uppercase group-hover:text-[#FF90E8] transition-colors focus:outline-none">
-            View Full Log
-          </button>
-        </div>
       </div>
 
     </div>

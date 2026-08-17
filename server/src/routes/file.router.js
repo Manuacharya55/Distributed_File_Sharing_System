@@ -1,9 +1,18 @@
 import express from "express"
 import upload from "../utils/multer.js";
-import { uploadFile } from "../controllers/file.controller.js";
+import { uploadFile, getSingleFile, getAllFiles, deleteFile } from "../controllers/file.controller.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
-router.route("/").post(upload.array('files',10), uploadFile);
+router.use(verifyJWT);
+
+router.route("/")
+    .post(upload.array('files', 10), uploadFile)
+    .get(getAllFiles);
+
+router.route("/:id")
+    .get(getSingleFile)
+    .delete(deleteFile);
 
 export default router;
