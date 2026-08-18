@@ -1,20 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { getRequest } from '../../../api/api';
+import { getRequest, deleteRequest } from '../../../api/api';
 import ImageComponent from '../../../components/shared/ImageComponent';
 
 const FilesPage = () => {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
 
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
-  const fetchFiles = async () => {
+  const fetchFiles = async (currentPage = page) => {
     try {
       setLoading(true);
-      const response = await getRequest('/file');
+      const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
+      const url = `/file?page=${currentPage}${searchParam}`;
+      const response = await getRequest(url);
       if (response && response.data && response.data.files) {
           setFiles(response.data.files);
+          setPagination(response.data.pagination);
       }
     } catch (err) {
       setError("Failed to fetch files.");
@@ -25,12 +31,45 @@ const FilesPage = () => {
   };
 
   useEffect(() => {
-    fetchFiles();
+    fetchFiles(1);
   }, []);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setPage(1);
+    fetchFiles(1);
+  };
+
+  const handlePrevious = () => {
+    if (pagination?.hasPreviousPage) {
+      const newPage = page - 1;
+      setPage(newPage);
+      fetchFiles(newPage);
+    }
+  };
+
+  const handleNext = () => {
+    if (pagination?.hasNextPage) {
+      const newPage = page + 1;
+      setPage(newPage);
+      fetchFiles(newPage);
+    }
+  };
 
   const handleUploadSuccess = () => {
     setIsUploadModalOpen(false);
     fetchFiles();
+  };
+
+  const handleDelete = async (fileId) => {
+    if (!window.confirm("Are you sure you want to delete this file?")) return;
+    try {
+      await deleteRequest(`/file/${fileId}`);
+      fetchFiles(); // Refresh the list
+    } catch (err) {
+      console.error("Failed to delete file:", err);
+      alert("Failed to delete file.");
+    }
   };
 
   const getFileColor = (index) => {
@@ -85,19 +124,38 @@ const FilesPage = () => {
             All Files
           </h1>
           <br/>
-          <p className="text-xl font-bold bg-[#FFC900] border-2 border-black px-4 py-2 shadow-[4px_4px_0_0_#000] inline-block">
+          <p className="text-xl font-bold bg-[#FFC900] border-2 border-black px-4 py-2 shadow-[4px_4px_0_0_#000] inline-block mb-4 md:mb-0">
             Welcome to the funk zone.
           </p>
         </div>
-        <button 
-          onClick={() => setIsUploadModalOpen(true)}
-          className="inline-flex items-center justify-center px-8 py-4 bg-[#00FF00] text-black border-4 border-black font-black uppercase text-xl shadow-[6px_6px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[8px_8px_0_0_#000] active:shadow-none active:translate-y-[6px] active:translate-x-[6px] transition-all gap-3"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-          </svg>
-          Upload File
-        </button>
+
+        <div className="flex flex-col md:flex-row gap-4 items-center w-full md:w-auto">
+          <form onSubmit={handleSearch} className="flex w-full md:w-auto shadow-[6px_6px_0_0_#000] hover:shadow-[8px_8px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 transition-all">
+            <input 
+              type="text" 
+              placeholder="Search files..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full md:w-64 border-4 border-black p-3 text-lg font-bold focus:outline-none"
+            />
+            <button 
+              type="submit"
+              className="px-4 py-3 bg-cyan-300 text-black border-y-4 border-r-4 border-black font-black uppercase text-lg"
+            >
+              Search
+            </button>
+          </form>
+
+          <button 
+            onClick={() => setIsUploadModalOpen(true)}
+            className="inline-flex items-center justify-center px-8 py-4 bg-[#00FF00] text-black border-4 border-black font-black uppercase text-xl shadow-[6px_6px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[8px_8px_0_0_#000] active:shadow-none active:translate-y-[6px] active:translate-x-[6px] transition-all gap-3 w-full md:w-auto"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            Upload
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -156,18 +214,52 @@ const FilesPage = () => {
                 <span className="text-xs font-black uppercase bg-black text-white px-2 py-1">
                   {file.extension || 'FILE'}
                 </span>
-                <button 
-                  onClick={(e) => handleDownload(e, file.fileUrl, downloadFileName)}
-                  className="bg-white border-2 border-black p-1 hover:bg-gray-200 transition-colors"
-                  title="Download"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                </button>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={(e) => handleDownload(e, file.fileUrl, downloadFileName)}
+                    className="bg-white border-2 border-black p-1 hover:bg-gray-200 transition-colors"
+                    title="Download"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(file._id)}
+                    className="bg-red-500 text-white border-2 border-black p-1 hover:bg-red-600 transition-colors"
+                    title="Delete"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           )})}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {pagination && (pagination.hasNextPage || pagination.hasPreviousPage) && (
+        <div className="flex justify-center items-center gap-4 mt-12">
+          <button 
+            onClick={handlePrevious}
+            disabled={!pagination.hasPreviousPage}
+            className={`px-6 py-3 border-4 border-black font-black uppercase shadow-[4px_4px_0_0_#000] transition-all ${!pagination.hasPreviousPage ? 'bg-gray-300 text-gray-500 shadow-none' : 'bg-white text-black hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000] active:translate-y-[4px] active:shadow-none'}`}
+          >
+            Previous
+          </button>
+          <span className="text-xl font-black bg-white border-4 border-black px-4 py-2 shadow-[4px_4px_0_0_#000]">
+            Page {pagination.currentPage}
+          </span>
+          <button 
+            onClick={handleNext}
+            disabled={!pagination.hasNextPage}
+            className={`px-6 py-3 border-4 border-black font-black uppercase shadow-[4px_4px_0_0_#000] transition-all ${!pagination.hasNextPage ? 'bg-gray-300 text-gray-500 shadow-none' : 'bg-[#00FF00] text-black hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000] active:translate-y-[4px] active:shadow-none'}`}
+          >
+            Next
+          </button>
         </div>
       )}
 

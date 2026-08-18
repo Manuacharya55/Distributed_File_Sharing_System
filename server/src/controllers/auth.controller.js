@@ -1,4 +1,5 @@
 import User from "../models/user.model.js";
+import jwt from "jsonwebtoken";
 import redisIO from "../redis/connection.js";
 import { DuplicateError, NotFoundError, UnauthorizedError } from "../utils/ApiError.js";
 import { ApiSuccess } from "../utils/ApiSuccess.js";
@@ -57,7 +58,7 @@ export const registerUser = asyncHandler(async (req, res) => {
         subject: "Your OTP Verification Code",
         htmlTemplate
     }, { attempts: 3, backoff: { type: 'exponential', delay: 1000 } });
-    res.cookie("refresh-token", refreshToken, options).status(201).json(new ApiSuccess(201, data, "User registered successfully"))
+    res.cookie("refreshToken", refreshToken, options).status(201).json(new ApiSuccess(201, data, "User registered successfully"))
 })
 
 export const loginUser = asyncHandler(async (req, res) => {
@@ -89,7 +90,7 @@ export const loginUser = asyncHandler(async (req, res) => {
         token: accessToken
     }
 
-    res.cookie("token", refreshToken, options).status(201).json(new ApiSuccess(201, data, "User registered successfully"))
+    res.cookie("refreshToken", refreshToken, options).status(201).json(new ApiSuccess(201, data, "User logged in successfully"))
 
 })
 
@@ -101,7 +102,7 @@ export const logoutUser = asyncHandler(async (req, res) => {
     existingUser.refreshToken = null
     await existingUser.save();
 
-    res.clearCookie('token')
+    res.clearCookie('refreshToken')
     res.status(201).json(new ApiSuccess(201, null, "user logged out successfully"))
 })
 
@@ -125,4 +126,35 @@ export const verifyEmail = asyncHandler(async (req, res) => {
     await user.save();
 
     res.status(200).json(new ApiSuccess(200, null, "Email verified successfully"));
+});
+
+export const refreshAccessToken = asyncHandler(async (req, res) => {
+    const incomingRefreshToken = req.cookies.refreshToken;
+    if (!incomingRefreshToken) {
+        throw new UnauthorizedError("Unauthorized request");
+    }
+
+    try {
+        const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+        const user = await User.findById(decodedToken?._id);
+
+        if (!user) {
+            throw new UnauthorizedError("Invalid refresh token");
+        }
+
+        if (incomingRefreshToken !== user.refreshToken) {
+            throw new UnauthorizedError("Refresh token is expired or used");
+        }
+
+        const { accessToken, refreshToken: newRefreshToken } = await createToken(user);
+        
+        user.refreshToken = newRefreshToken;
+        await user.save();
+        
+        res.cookie("refreshToken", newRefreshToken, options).status(200).json(
+            new ApiSuccess(200, { token: accessToken }, "Access token refreshed")
+        );
+    } catch (error) {
+        throw new UnauthorizedError("Invalid refresh token");
+    }
 });

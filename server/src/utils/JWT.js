@@ -5,7 +5,7 @@ export const createToken = async (data) => {
     try {
         const accessToken = await jwt.sign({
             _id: data._id
-        }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '50m' })
+        }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1m' })
 
         const refreshToken = await jwt.sign({
             _id: data._id,

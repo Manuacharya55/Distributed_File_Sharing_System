@@ -2,7 +2,7 @@ import { ApiSuccess } from "../utils/ApiSuccess.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import File from "../models/file.model.js";
 import { ApiError, NotFoundError, UnauthorizedError } from "../utils/ApiError.js";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { awsS3Bucket } from "../utils/aws.js";
 import path from 'path';
 import { paginate } from "../utils/pagination.js";
@@ -41,6 +41,7 @@ const awsUpload = async(files,userId)=>{
         throw new ApiError(400,error.message,"something went wrong")
     }
 }
+
 export const uploadFile = asyncHandler(async(req,res)=>{
     const files = req.files;
     const {folder} = req.body;
@@ -83,6 +84,9 @@ export const getSingleFile = asyncHandler(async (req, res) => {
 
 export const getAllFiles = asyncHandler(async (req, res) => {
     const query = { user: req.user._id };
+    if (req.query.search) {
+        query.originalName = { $regex: req.query.search, $options: 'i' };
+    }
     const { results, pagination } = await paginate(File, query, req.query.page, req.query.limit);
     res.status(200).json(new ApiSuccess(200, { files: results, pagination }, "Files retrieved successfully"));
 });
@@ -99,7 +103,22 @@ export const deleteFile = asyncHandler(async (req, res) => {
         throw new UnauthorizedError("You do not have permission to delete this file");
     }
 
-    // Physical deletion (e.g. S3) will go here later
+    // Physical deletion from S3
+    if (file.key) {
+        try {
+            const command = new DeleteObjectCommand({
+                Bucket: process.env.AWS_BUCKET_NAME,
+                Key: file.key
+            });
+            await awsS3Bucket.send(command);
+        } catch (error) {
+            console.error("Failed to delete file from S3:", error);
+            // Decide if we should throw or continue to delete from DB
+            // We'll throw to prevent orphaned files in S3 if deletion fails
+            throw new ApiError(500, "Failed to delete file from AWS S3");
+        }
+    }
+
     await File.findByIdAndDelete(id);
 
     res.status(200).json(new ApiSuccess(200, null, "File deleted successfully"));

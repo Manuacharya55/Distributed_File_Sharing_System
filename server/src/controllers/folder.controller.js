@@ -23,6 +23,9 @@ export const createFolder = asyncHandler(async (req, res) => {
 
 export const getFolders = asyncHandler(async (req, res) => {
     const query = { user: req.user._id };
+    if (req.query.search) {
+        query.name = { $regex: req.query.search, $options: 'i' };
+    }
     
     const { results, pagination } = await paginate(Folder, query, req.query.page, req.query.limit);
     
@@ -39,7 +42,12 @@ export const getSingleFolder = asyncHandler(async (req, res) => {
         throw new NotFoundError("Folder not found");
     }
 
-    const { results, pagination } = await paginate(File, {folder : id , user : _id}, req.query.page, req.query.limit);
+    const fileQuery = { folder: id, user: _id };
+    if (req.query.search) {
+        fileQuery.originalName = { $regex: req.query.search, $options: 'i' };
+    }
+
+    const { results, pagination } = await paginate(File, fileQuery, req.query.page, req.query.limit);
 
     res.status(200).json(new ApiSuccess(200, { folder, files: results, pagination }, "Folder retrieved successfully"));
 });

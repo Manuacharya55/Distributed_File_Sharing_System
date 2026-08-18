@@ -10,17 +10,23 @@ const FolderDetailsPage = () => {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
 
   // Upload Modal State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
-  const fetchFolderDetails = async () => {
+  const fetchFolderDetails = async (currentPage = page) => {
     try {
       setLoading(true);
-      const response = await getRequest(`/folder/${folderId}`);
+      const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
+      const url = `/folder/${folderId}?page=${currentPage}${searchParam}`;
+      const response = await getRequest(url);
       if (response && response.data) {
         setFolder(response.data.folder);
         setFiles(response.data.files || []);
+        setPagination(response.data.pagination);
       }
     } catch (err) {
       setError("Failed to fetch folder details.");
@@ -31,8 +37,30 @@ const FolderDetailsPage = () => {
   };
 
   useEffect(() => {
-    fetchFolderDetails();
+    fetchFolderDetails(1);
   }, [folderId]);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setPage(1);
+    fetchFolderDetails(1);
+  };
+
+  const handlePrevious = () => {
+    if (pagination?.hasPreviousPage) {
+      const newPage = page - 1;
+      setPage(newPage);
+      fetchFolderDetails(newPage);
+    }
+  };
+
+  const handleNext = () => {
+    if (pagination?.hasNextPage) {
+      const newPage = page + 1;
+      setPage(newPage);
+      fetchFolderDetails(newPage);
+    }
+  };
 
   const getFileColor = (index) => {
     const colors = ['bg-[#FF90E8]', 'bg-[#FFC900]', 'bg-[#00FF00]', 'bg-[#8A2BE2]', 'bg-cyan-300', 'bg-red-400'];
@@ -117,16 +145,33 @@ const FolderDetailsPage = () => {
             </div>
           </div>
         </div>
-        
-        <button 
-          onClick={() => setIsUploadModalOpen(true)}
-          className="inline-flex items-center justify-center px-8 py-4 bg-[#00FF00] text-black border-4 border-black font-black uppercase text-xl shadow-[6px_6px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[8px_8px_0_0_#000] active:shadow-none active:translate-y-[6px] active:translate-x-[6px] transition-all gap-3"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-          </svg>
-          Upload File
-        </button>
+        <div className="flex flex-col md:flex-row gap-4 items-center w-full md:w-auto">
+          <form onSubmit={handleSearch} className="flex w-full md:w-auto shadow-[6px_6px_0_0_#000] hover:shadow-[8px_8px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 transition-all">
+            <input 
+              type="text" 
+              placeholder="Search files..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full md:w-64 border-4 border-black p-3 text-lg font-bold focus:outline-none"
+            />
+            <button 
+              type="submit"
+              className="px-4 py-3 bg-cyan-300 text-black border-y-4 border-r-4 border-black font-black uppercase text-lg"
+            >
+              Search
+            </button>
+          </form>
+
+          <button 
+            onClick={() => setIsUploadModalOpen(true)}
+            className="inline-flex items-center justify-center px-8 py-4 bg-[#00FF00] text-black border-4 border-black font-black uppercase text-xl shadow-[6px_6px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[8px_8px_0_0_#000] active:shadow-none active:translate-y-[6px] active:translate-x-[6px] transition-all gap-3 w-full md:w-auto"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            Upload File
+          </button>
+        </div>
       </div>
 
       {files.length === 0 ? (
@@ -190,6 +235,29 @@ const FolderDetailsPage = () => {
               </div>
             </div>
           )})}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {pagination && (pagination.hasNextPage || pagination.hasPreviousPage) && (
+        <div className="flex justify-center items-center gap-4 mt-12">
+          <button 
+            onClick={handlePrevious}
+            disabled={!pagination.hasPreviousPage}
+            className={`px-6 py-3 border-4 border-black font-black uppercase shadow-[4px_4px_0_0_#000] transition-all ${!pagination.hasPreviousPage ? 'bg-gray-300 text-gray-500 shadow-none' : 'bg-white text-black hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000] active:translate-y-[4px] active:shadow-none'}`}
+          >
+            Previous
+          </button>
+          <span className="text-xl font-black bg-white border-4 border-black px-4 py-2 shadow-[4px_4px_0_0_#000]">
+            Page {pagination.currentPage}
+          </span>
+          <button 
+            onClick={handleNext}
+            disabled={!pagination.hasNextPage}
+            className={`px-6 py-3 border-4 border-black font-black uppercase shadow-[4px_4px_0_0_#000] transition-all ${!pagination.hasNextPage ? 'bg-gray-300 text-gray-500 shadow-none' : 'bg-[#00FF00] text-black hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000] active:translate-y-[4px] active:shadow-none'}`}
+          >
+            Next
+          </button>
         </div>
       )}
 

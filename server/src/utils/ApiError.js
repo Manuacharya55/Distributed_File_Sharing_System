@@ -78,4 +78,8 @@ export class DuplicateError extends ApiError{
     }
 }
 
-
+export class TokenExpiredError extends UnauthorizedError {
+    constructor(message = "Token Expired", errors = [], stack = "") {
+        super(message, errors, stack);
+    }
+}
