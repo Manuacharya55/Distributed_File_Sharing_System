@@ -1,6 +1,7 @@
 import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import redisIO from "../redis/connection.js";
+import crypto from "crypto";
 import { DuplicateError, NotFoundError, UnauthorizedError } from "../utils/ApiError.js";
 import { ApiSuccess } from "../utils/ApiSuccess.js";
 import { compareHashedPassword, hashPassword } from "../utils/argon.js";
@@ -16,11 +17,11 @@ const options = {
 }
 
 const generateOtp = () => {
-    return Math.floor(1000 + Math.random() * 9000).toString();
+    return crypto.randomInt(100000, 999999).toString();
 }
 
 const setOtpToRedis = async (userId, otp) => {
-    await redisIO.set(userId, otp, 'EX', 900)
+    await redisIO.set(`otp:${userId}`, otp, 'EX', 900)
 }
 
 export const registerUser = asyncHandler(async (req, res) => {
@@ -37,10 +38,9 @@ export const registerUser = asyncHandler(async (req, res) => {
 
     const user = await User.create({ name, email, password: hashedPassword });
 
-    const { accessToken, refreshToken } = await createToken(user);
+    const { accessToken, refreshToken, jti, familyId } = await createToken(user);
 
-    user.refreshToken = refreshToken;
-    await user.save();
+    await redisIO.set(`refresh_token:${user._id.toString()}:${familyId}`, jti, 'EX', 5 * 24 * 60 * 60);
 
     const data = {
         _id: user._id,
@@ -52,7 +52,6 @@ export const registerUser = asyncHandler(async (req, res) => {
     const htmlTemplate = generateOTPTemplate(otp);
 
     await setOtpToRedis(user._id.toString(), otp);
-    console.log(await redisIO.get(user._id.toString()))
     const job = await emailQueue.add("send-otp-email", {
         email: user.email,
         subject: "Your OTP Verification Code",
@@ -79,10 +78,9 @@ export const loginUser = asyncHandler(async (req, res) => {
         throw new UnauthorizedError("Email not verified. Please verify your email before logging in.");
     }
 
-    const { accessToken, refreshToken } = await createToken(existingUser);
+    const { accessToken, refreshToken, jti, familyId } = await createToken(existingUser);
 
-    existingUser.refreshToken = refreshToken;
-    await existingUser.save();
+    await redisIO.set(`refresh_token:${existingUser._id.toString()}:${familyId}`, jti, 'EX', 5 * 24 * 60 * 60);
 
     const data = {
         _id: existingUser._id,
@@ -95,12 +93,15 @@ export const loginUser = asyncHandler(async (req, res) => {
 })
 
 export const logoutUser = asyncHandler(async (req, res) => {
-    const { _id } = req.user;
-
-    const existingUser = await User.findById(_id).select("-password -otp");
-
-    existingUser.refreshToken = null
-    await existingUser.save();
+    const incomingRefreshToken = req.cookies.refreshToken;
+    if (incomingRefreshToken) {
+        try {
+            const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+            await redisIO.del(`refresh_token:${decodedToken._id}:${decodedToken.familyId}`);
+        } catch (error) {
+            console.error("Invalid token on logout");
+        }
+    }
 
     res.clearCookie('refreshToken')
     res.status(201).json(new ApiSuccess(201, null, "user logged out successfully"))
@@ -110,7 +111,7 @@ export const verifyEmail = asyncHandler(async (req, res) => {
     const { otp } = req.body;
     const userId = req.user._id.toString();
 
-    const cachedOtp = await redisIO.get(userId);
+    const cachedOtp = await redisIO.get(`otp:${userId}`);
 
     if (!cachedOtp || cachedOtp !== otp) {
         throw new UnauthorizedError("Invalid OTP");
@@ -142,14 +143,19 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
             throw new UnauthorizedError("Invalid refresh token");
         }
 
-        if (incomingRefreshToken !== user.refreshToken) {
+        const redisJti = await redisIO.get(`refresh_token:${decodedToken._id}:${decodedToken.familyId}`);
+
+        if (redisJti !== decodedToken.jti) {
+            if (redisJti) {
+                // Reuse detected - invalidate the family
+                await redisIO.del(`refresh_token:${decodedToken._id}:${decodedToken.familyId}`);
+            }
             throw new UnauthorizedError("Refresh token is expired or used");
         }
 
-        const { accessToken, refreshToken: newRefreshToken } = await createToken(user);
+        const { accessToken, refreshToken: newRefreshToken, jti: newJti, familyId } = await createToken(user, decodedToken.familyId);
         
-        user.refreshToken = newRefreshToken;
-        await user.save();
+        await redisIO.set(`refresh_token:${user._id.toString()}:${familyId}`, newJti, 'EX', 5 * 24 * 60 * 60);
         
         res.cookie("refreshToken", newRefreshToken, options).status(200).json(
             new ApiSuccess(200, { token: accessToken }, "Access token refreshed")

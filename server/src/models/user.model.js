@@ -3,18 +3,14 @@ import { Schema, model, Types } from "mongoose";
 const userSchema = new Schema({
     name: {
         type: String,
-        require: true,
+        required: true,
     }, email: {
         type: String,
-        require: true,
+        required: true,
         unique: true
     }, password: {
         type: String,
-        require: true,
-    },
-    refreshToken: {
-        type: String,
-        default: null
+        required: true,
     },
     isVerified: {
         type: Boolean,

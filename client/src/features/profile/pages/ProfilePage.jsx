@@ -1,28 +1,67 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { getRequest, patchRequest } from '../../../api/api';
+import ProfileForm from '../components/ProfileForm';
+import PasswordForm from '../components/PasswordForm';
+import Modal from '../../folders/components/Modal';
 
 const ProfilePage = () => {
-  const [profile, setProfile] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    bio: 'Software engineer and avid file sharer.'
-  });
-  
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedProfile, setEditedProfile] = useState({ ...profile });
+  const [profile, setProfile] = useState({ name: '', email: '' });
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isEditingPassword, setIsEditingPassword] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleChange = (e) => {
-    setEditedProfile({ ...editedProfile, [e.target.id]: e.target.value });
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await getRequest('/user/profile');
+        if (res.data && res.data.data && res.data.data.user) {
+          setProfile(res.data.data.user);
+        } else if (res.data && res.data.user) {
+          setProfile(res.data.user);
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const handleSave = async (data) => {
+    try {
+      const res = await patchRequest('/user/profile', data);
+      if (res.data && res.data.data && res.data.data.user) {
+        setProfile(res.data.data.user);
+        setIsEditingProfile(false);
+      } else if (res.data && res.data.user) {
+        setProfile(res.data.user);
+        setIsEditingProfile(false);
+      }
+    } catch (err) {
+      console.error("Failed to update profile", err);
+      alert(err.response?.data?.message || "Failed to update profile");
+    }
   };
 
-  const handleSave = () => {
-    setProfile(editedProfile);
-    setIsEditing(false);
-    console.log('Profile updated', editedProfile);
+  const handlePasswordSave = async (passwordData) => {
+    // Usually this would call a different API endpoint like PATCH /user/password
+    try {
+      await patchRequest('/user/password', passwordData); // Assuming this endpoint exists or will exist
+      setIsEditingPassword(false);
+      alert("Password updated successfully");
+    } catch (err) {
+      console.error("Failed to update password", err);
+      alert(err.response?.data?.message || "Failed to update password");
+    }
   };
+
+  if (loading) {
+    return <div className="max-w-4xl mx-auto px-6 py-12 text-3xl font-black uppercase text-center mt-20 animate-pulse">Loading profile...</div>;
+  }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
+    <div className="max-w-4xl mx-auto px-6 py-12 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row items-start gap-10">
         
         {/* Profile Sidebar */}
@@ -34,78 +73,64 @@ const ProfilePage = () => {
               alt="Profile avatar" 
             />
           </div>
-          <h2 className="text-2xl font-black uppercase text-center mb-1">{profile.name}</h2>
+          <h2 className="text-2xl font-black uppercase text-center mb-1">{profile.name || 'User'}</h2>
           <p className="text-gray-600 font-bold text-center mb-6">{profile.email}</p>
           
-          <Link 
-            to="/change-password" 
+          <button 
+            onClick={() => setIsEditingPassword(true)}
             className="w-full py-3 bg-yellow-300 border-2 border-black text-black font-black uppercase text-center shadow-[4px_4px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_0_#000] active:shadow-none active:translate-y-[4px] active:translate-x-[4px] transition-all"
           >
             Change Password
-          </Link>
+          </button>
         </div>
 
-        {/* Profile Details */}
+        {/* Profile Details (Read Only) */}
         <div className="w-full md:w-2/3 p-8 border-4 border-black bg-white shadow-[8px_8px_0_0_#000]">
           <div className="flex justify-between items-center mb-8 pb-4 border-b-4 border-black">
             <h1 className="text-3xl font-black uppercase">Profile Details</h1>
-            {!isEditing ? (
-              <button 
-                onClick={() => setIsEditing(true)}
-                className="px-4 py-2 bg-black text-white font-bold uppercase border-2 border-black hover:bg-white hover:text-black transition-colors"
-              >
-                Edit
-              </button>
-            ) : (
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setIsEditing(false)}
-                  className="px-4 py-2 bg-white text-black font-bold uppercase border-2 border-black hover:bg-gray-100 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleSave}
-                  className="px-4 py-2 bg-[#FF90E8] text-black font-bold uppercase border-2 border-black hover:bg-pink-400 transition-colors"
-                >
-                  Save
-                </button>
-              </div>
-            )}
+            <button 
+              onClick={() => setIsEditingProfile(true)}
+              className="px-4 py-2 bg-black text-white font-bold uppercase border-2 border-black hover:bg-white hover:text-black transition-colors"
+            >
+              Edit
+            </button>
           </div>
 
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
               <label className="font-bold uppercase text-sm tracking-wide">Full Name</label>
-              {isEditing ? (
-                <input 
-                  id="name"
-                  value={editedProfile.name}
-                  onChange={handleChange}
-                  className="w-full p-3 border-2 border-black focus:outline-none focus:shadow-[4px_4px_0_0_#000] transition-shadow bg-[#f8f9fa]"
-                />
-              ) : (
-                <p className="text-xl font-medium p-3 border-2 border-transparent bg-gray-50">{profile.name}</p>
-              )}
+              <p className="text-xl font-medium p-3 border-4 border-black bg-gray-50 shadow-[4px_4px_0_0_#000]">{profile.name}</p>
             </div>
 
             <div className="flex flex-col gap-2">
               <label className="font-bold uppercase text-sm tracking-wide">Email Address</label>
-              {isEditing ? (
-                <input 
-                  id="email"
-                  type="email"
-                  value={editedProfile.email}
-                  onChange={handleChange}
-                  className="w-full p-3 border-2 border-black focus:outline-none focus:shadow-[4px_4px_0_0_#000] transition-shadow bg-[#f8f9fa]"
-                />
-              ) : (
-                <p className="text-xl font-medium p-3 border-2 border-transparent bg-gray-50">{profile.email}</p>
-              )}
+              <p className="text-xl font-medium p-3 border-4 border-black bg-gray-50 shadow-[4px_4px_0_0_#000]">{profile.email}</p>
             </div>
+
+
           </div>
         </div>
+        
       </div>
+
+      <Modal isOpen={isEditingProfile} onClose={() => setIsEditingProfile(false)} title="Edit Profile">
+        {isEditingProfile && (
+          <ProfileForm 
+            defaultValues={profile}
+            onSave={handleSave}
+            onCancel={() => setIsEditingProfile(false)}
+          />
+        )}
+      </Modal>
+
+      <Modal isOpen={isEditingPassword} onClose={() => setIsEditingPassword(false)} title="Change Password">
+        {isEditingPassword && (
+          <PasswordForm 
+            onSave={handlePasswordSave}
+            onCancel={() => setIsEditingPassword(false)}
+          />
+        )}
+      </Modal>
     </div>
   );
 };

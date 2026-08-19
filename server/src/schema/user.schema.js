@@ -21,3 +21,17 @@ export const userLoginSchema = z.object({
         .min(5, "password must have at least 5 characters")
         .max(25, "password should have less than 25 characters"),
 })
+
+export const updateProfileSchema = z.object({
+    name: z.string().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
+    email: z.string().email({ message: "enter a valid email" })
+});
+
+export const changePasswordSchema = z.object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z.string().min(6, "New password must be at least 6 characters"),
+    confirmPassword: z.string().min(1, "Confirm password is required")
+}).refine(data => data.newPassword === data.confirmPassword, {
+    message: "New password and confirm password do not match",
+    path: ["confirmPassword"]
+});

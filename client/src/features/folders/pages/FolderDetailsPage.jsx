@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getRequest } from '../../api/api';
-import ImageComponent from '../../components/shared/ImageComponent';
+import { getRequest } from '../../../api/api';
+import ImageComponent from '../../../components/shared/ImageComponent';
+import SearchBox from '../components/SearchBox';
+import FileCard from '../components/FileCard';
+import { CardShimmer } from '../../../components/shared/Loader';
+import Pagination from '../../../components/shared/Pagination';
 
 const FolderDetailsPage = () => {
   const { folderId } = useParams();
@@ -62,10 +66,6 @@ const FolderDetailsPage = () => {
     }
   };
 
-  const getFileColor = (index) => {
-    const colors = ['bg-[#FF90E8]', 'bg-[#FFC900]', 'bg-[#00FF00]', 'bg-[#8A2BE2]', 'bg-cyan-300', 'bg-red-400'];
-    return colors[index % colors.length];
-  };
 
   const handleDownload = async (e, fileUrl, originalName) => {
     e.preventDefault();
@@ -108,7 +108,11 @@ const FolderDetailsPage = () => {
   };
 
   if (loading) {
-    return <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 text-3xl font-black uppercase text-center mt-20 animate-pulse">Loading folder...</div>;
+    return (
+      <div className="max-w-7xl mx-auto px-6 md:px-12 py-12">
+        <CardShimmer count={4} />
+      </div>
+    );
   }
 
   if (error) {
@@ -146,21 +150,12 @@ const FolderDetailsPage = () => {
           </div>
         </div>
         <div className="flex flex-col md:flex-row gap-4 items-center w-full md:w-auto">
-          <form onSubmit={handleSearch} className="flex w-full md:w-auto shadow-[6px_6px_0_0_#000] hover:shadow-[8px_8px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 transition-all">
-            <input 
-              type="text" 
-              placeholder="Search files..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full md:w-64 border-4 border-black p-3 text-lg font-bold focus:outline-none"
-            />
-            <button 
-              type="submit"
-              className="px-4 py-3 bg-cyan-300 text-black border-y-4 border-r-4 border-black font-black uppercase text-lg"
-            >
-              Search
-            </button>
-          </form>
+          <SearchBox 
+            handleSearch={handleSearch} 
+            searchQuery={searchQuery} 
+            setSearchQuery={setSearchQuery} 
+            placeholder="Search files..."
+          />
 
           <button 
             onClick={() => setIsUploadModalOpen(true)}
@@ -180,86 +175,23 @@ const FolderDetailsPage = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-          {files.map((file, index) => {
-            let displayFileName = 'Unknown File';
-            let downloadFileName = 'download';
-            if (file.key) {
-               const keyParts = file.key.split('/');
-               downloadFileName = keyParts[keyParts.length - 1]; 
-               const nameParts = downloadFileName.split('-');
-               displayFileName = nameParts.length > 2 ? nameParts.slice(2).join('-') : downloadFileName;
-            } else if (file.fileUrl) {
-               downloadFileName = file.fileUrl.split('/').pop();
-               displayFileName = downloadFileName;
-            }
-
-            return (
-            <div 
-              key={file._id}
-              className={`group ${getFileColor(index)} border-4 border-black p-6 flex flex-col justify-between shadow-[8px_8px_0_0_#000] hover:-translate-y-2 hover:-translate-x-2 hover:shadow-[12px_12px_0_0_#000] active:shadow-none active:translate-y-[8px] active:translate-x-[8px] transition-all relative block`}
-            >
-              <div className="mb-6 flex justify-center">
-                 <div className="w-20 h-20 bg-white border-4 border-black flex items-center justify-center text-black shadow-[4px_4px_0_0_#000] group-hover:rotate-12 group-hover:scale-110 transition-transform overflow-hidden">
-                   {file.mimeType && file.mimeType.includes('image') ? (
-                     <img src={file.fileUrl} alt={displayFileName} className="w-full h-full object-cover" />
-                   ) : (
-                     <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                     </svg>
-                   )}
-                 </div>
-              </div>
-              
-              <div className="text-center mb-6 overflow-hidden">
-                <h3 className="text-xl font-black text-black uppercase mb-2 truncate" title={displayFileName}>
-                  {displayFileName}
-                </h3>
-                <span className="text-sm font-bold text-black bg-white border-2 border-black px-2 py-1 uppercase shadow-[2px_2px_0_0_#000]">
-                  {(file.size / 1024).toFixed(2)} KB
-                </span>
-              </div>
-              
-              <div className="w-full pt-4 border-t-4 border-black mt-auto flex justify-between items-center">
-                <span className="text-xs font-black uppercase bg-black text-white px-2 py-1">
-                  {file.extension || 'FILE'}
-                </span>
-                <button 
-                  onClick={(e) => handleDownload(e, file.fileUrl, downloadFileName)}
-                  className="bg-white border-2 border-black p-1 hover:bg-gray-200 transition-colors"
-                  title="Download"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          )})}
+          {files.map((file, index) => (
+            <FileCard 
+              key={file._id} 
+              file={file} 
+              index={index} 
+              handleDownload={handleDownload} 
+            />
+          ))}
         </div>
       )}
 
       {/* Pagination Controls */}
-      {pagination && (pagination.hasNextPage || pagination.hasPreviousPage) && (
-        <div className="flex justify-center items-center gap-4 mt-12">
-          <button 
-            onClick={handlePrevious}
-            disabled={!pagination.hasPreviousPage}
-            className={`px-6 py-3 border-4 border-black font-black uppercase shadow-[4px_4px_0_0_#000] transition-all ${!pagination.hasPreviousPage ? 'bg-gray-300 text-gray-500 shadow-none' : 'bg-white text-black hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000] active:translate-y-[4px] active:shadow-none'}`}
-          >
-            Previous
-          </button>
-          <span className="text-xl font-black bg-white border-4 border-black px-4 py-2 shadow-[4px_4px_0_0_#000]">
-            Page {pagination.currentPage}
-          </span>
-          <button 
-            onClick={handleNext}
-            disabled={!pagination.hasNextPage}
-            className={`px-6 py-3 border-4 border-black font-black uppercase shadow-[4px_4px_0_0_#000] transition-all ${!pagination.hasNextPage ? 'bg-gray-300 text-gray-500 shadow-none' : 'bg-[#00FF00] text-black hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000] active:translate-y-[4px] active:shadow-none'}`}
-          >
-            Next
-          </button>
-        </div>
-      )}
+      <Pagination 
+        pagination={pagination} 
+        handlePrevious={handlePrevious} 
+        handleNext={handleNext} 
+      />
 
       {/* Upload File Modal */}
       {isUploadModalOpen && (

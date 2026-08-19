@@ -40,6 +40,9 @@ const fileSchema = new Schema(
   { timestamps: true }
 );
 
+fileSchema.index({ user: 1, folder: 1 });
+fileSchema.index({ user: 1, createdAt: -1 });
+
 const File = model("File", fileSchema);
 
 export default File;

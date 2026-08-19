@@ -1,9 +1,9 @@
 import { ApiSuccess } from "../utils/ApiSuccess.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import File from "../models/file.model.js";
-import { ApiError, NotFoundError, UnauthorizedError } from "../utils/ApiError.js";
+import { BadRequestError, NotFoundError, UnauthorizedError, InternalServerError } from "../utils/ApiError.js";
 import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { awsS3Bucket } from "../utils/aws.js";
+import { awsS3Bucket } from "../config/aws.js";
 import path from 'path';
 import { paginate } from "../utils/pagination.js";
 
@@ -38,7 +38,7 @@ const awsUpload = async(files,userId)=>{
 
     } catch (error) {
         console.log(error)
-        throw new ApiError(400,error.message,"something went wrong")
+        throw new BadRequestError("something went wrong", [error.message])
     }
 }
 
@@ -48,7 +48,7 @@ export const uploadFile = asyncHandler(async(req,res)=>{
     const {_id} = req.user;
 
     if(!files){
-        throw new ApiError(400,"No files uploaded")
+        throw new BadRequestError("No files uploaded")
     }
     const uploadedFiles = await awsUpload(files,req.user._id)
 
@@ -113,9 +113,8 @@ export const deleteFile = asyncHandler(async (req, res) => {
             await awsS3Bucket.send(command);
         } catch (error) {
             console.error("Failed to delete file from S3:", error);
-            // Decide if we should throw or continue to delete from DB
-            // We'll throw to prevent orphaned files in S3 if deletion fails
-            throw new ApiError(500, "Failed to delete file from AWS S3");
+
+            throw new InternalServerError("Failed to delete file from AWS S3");
         }
     }
 

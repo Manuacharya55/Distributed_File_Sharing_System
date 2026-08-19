@@ -1,10 +1,11 @@
 import { createContext, useContext, useState, useMemo } from 'react';
 import axios from 'axios';
+import { setToken as setApiToken } from '../api/api';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken_] = useState(localStorage.getItem("token"));
+  const [token, setToken_] = useState(null);
 
   const setToken = (newToken) => {
     setToken_(newToken);
@@ -13,10 +14,10 @@ export const AuthProvider = ({ children }) => {
   useMemo(() => {
     if (token) {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      localStorage.setItem("token", token);
+      setApiToken(token);
     } else {
       delete axios.defaults.headers.common["Authorization"];
-      localStorage.removeItem("token");
+      setApiToken(null);
     }
   }, [token]);
 

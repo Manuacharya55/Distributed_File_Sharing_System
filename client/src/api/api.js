@@ -3,11 +3,16 @@ import axios from "axios";
 axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
 axios.defaults.withCredentials = true;
 
+let inMemoryToken = null;
+
+export const setToken = (token) => {
+    inMemoryToken = token;
+};
+
 axios.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem("token");
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+        if (inMemoryToken) {
+            config.headers.Authorization = `Bearer ${inMemoryToken}`;
         }
         return config;
     },
@@ -39,6 +44,10 @@ axios.interceptors.response.use(
         const originalRequest = error.config;
         console.log(error)
         if (error.response && error.response.status === 401 && error.response.data?.message === "Token Expired" && !originalRequest._retry) {
+            if (originalRequest.url.includes('/auth/refresh-token')) {
+                return Promise.reject(error);
+            }
+
             if (isRefreshing) {
                 return new Promise(function(resolve, reject) {
                     failedQueue.push({ resolve, reject });
@@ -58,7 +67,7 @@ axios.interceptors.response.use(
                 const response = await axios.get('/auth/refresh-token');
                 if (response.data && response.data.data && response.data.data.token) {
                     const newToken = response.data.data.token;
-                    localStorage.setItem("token", newToken);
+                    setToken(newToken);
                     
                     originalRequest.headers.Authorization = `Bearer ${newToken}`;
                     processQueue(null, newToken);
@@ -67,7 +76,7 @@ axios.interceptors.response.use(
             } catch (refreshError) {
                 // Refresh token is expired or invalid
                 processQueue(refreshError, null);
-                localStorage.removeItem("token");
+                setToken(null);
                 window.location.href = '/'; 
                 return Promise.reject(refreshError);
             } finally {

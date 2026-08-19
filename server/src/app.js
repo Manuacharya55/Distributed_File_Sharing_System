@@ -8,6 +8,7 @@ import authRouter from "./routes/auth.router.js"
 import fileRouter from "./routes/file.router.js"
 import folderRouter from "./routes/folder.router.js"
 import dashboardRouter from "./routes/dashboard.router.js"
+import userRouter from "./routes/user.router.js"
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use("/api/v1/auth",authRouter)
 app.use("/api/v1/file",fileRouter)
 app.use("/api/v1/folder",folderRouter)
 app.use("/api/v1/dashboard",dashboardRouter)
+app.use("/api/v1/user",userRouter)
 
 app.use(globalError)
 
