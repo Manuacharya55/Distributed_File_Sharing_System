@@ -32,8 +32,7 @@ const ProfilePage = () => {
   const handleSave = async (data) => {
     const response = await patchRequest('/user/profile', data);
     if (response?.success === false) {
-      alert(response.message || "Failed to update profile");
-      return;
+      return response;
     }
     
     const updatedProfile = response?.data?.data?.user || response?.data?.user || response?.data;
@@ -42,16 +41,16 @@ const ProfilePage = () => {
     }
     
     setIsEditingProfile(false);
+    return response;
   };
 
   const handlePasswordSave = async (passwordData) => {
     const response = await patchRequest('/user/password', passwordData);
     if (response?.success === false) {
-      alert(response.message || "Failed to update password");
-      return;
+      return response;
     }
     setIsEditingPassword(false);
-    alert("Password updated successfully");
+    return response;
   };
 
   const handleAvatarUpload = async (e) => {

@@ -3,11 +3,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { profileSchema } from '../schema/profile.schema';
 import InputField from '../../../components/shared/InputField';
+import { setFormErrors } from '../../../utils/formErrors';
 
 const ProfileForm = ({ defaultValues, onSave, onCancel }) => {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting }
   } = useForm({
     resolver: zodResolver(profileSchema),
@@ -18,7 +20,10 @@ const ProfileForm = ({ defaultValues, onSave, onCancel }) => {
   });
 
   const onSubmit = async (data) => {
-    await onSave(data);
+    const response = await onSave(data);
+    if (response && response.success === false) {
+      setFormErrors(setError, response, "email");
+    }
   };
 
   return (

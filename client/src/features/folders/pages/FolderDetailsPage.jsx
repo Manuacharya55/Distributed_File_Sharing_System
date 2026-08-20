@@ -12,6 +12,8 @@ import ErrorState from '../../../components/shared/ErrorState';
 import EmptyState from '../../../components/shared/EmptyState';
 import ConfirmModal from '../../../components/shared/ConfirmModal';
 
+import { downloadFile } from '../../../utils/downloadFile';
+
 const fetchFolderDetails = async (folderId, page, searchQuery) => {
   const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
   const url = `/folder/${folderId}?page=${page}${searchParam}`;
@@ -79,34 +81,9 @@ const FolderDetailsPage = () => {
     setFileToDelete(null);
   };
 
-  const handleDownload = async (e, fileUrl, originalName) => {
+  const handleDownload = (e, fileUrl, originalName) => {
     e.preventDefault();
-    try {
-      const response = await fetch(fileUrl, { method: 'GET' });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      const safeFilename = originalName || fileUrl.split('/').pop() || 'download';
-      link.setAttribute('download', safeFilename);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Frontend download failed: ", error);
-      alert("Download failed. Please ensure your AWS S3 bucket has CORS enabled for GET requests, or download the file manually from the new tab.");
-      const fallbackLink = document.createElement('a');
-      fallbackLink.href = fileUrl;
-      fallbackLink.target = '_blank';
-      fallbackLink.download = originalName;
-      document.body.appendChild(fallbackLink);
-      fallbackLink.click();
-      document.body.removeChild(fallbackLink);
-    }
+    downloadFile(fileUrl, originalName);
   };
 
   const handleUploadSuccess = (uploadedData) => {
