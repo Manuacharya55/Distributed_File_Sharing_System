@@ -97,8 +97,11 @@ export const getRequest = async (url) => {
             return response.data;
         }
     } catch (error) {
-        console.log(error);
-        throw error;
+        return {
+            success : false,
+            message : error?.response?.data?.message || error.message,
+            errors : error?.response?.data?.errors || []
+        }
     }
 };
 
@@ -113,8 +116,11 @@ export const postRequest = async (url, data) => {
             return response.data;
         }
     } catch (error) {
-        console.log(error);
-        throw error;
+        return {
+            success: false,
+            message: error?.response?.data?.message || error.message,
+            errors : error?.response?.data?.errors || []
+        }
     }
 };
 
@@ -129,8 +135,11 @@ export const patchRequest = async (url, data) => {
             return response.data;
         }
     } catch (error) {
-        console.log(error);
-        throw error;
+        return {
+            success: false,
+            message: error?.response?.data?.message || error.message,
+            errors : error?.response?.data?.errors || []
+        }
     }
 };
 
@@ -141,8 +150,11 @@ export const deleteRequest = async (url) => {
             return response.data;
         }
     } catch (error) {
-        console.log(error);
-        throw error;
+        return {
+            success: false,
+            message: error?.response?.data?.message || error.message,
+            errors : error?.response?.data?.errors || []
+        }
     }
 };
 
@@ -160,8 +172,30 @@ export const postMultipartRequest = async (url, formData) => {
             return response.data;
         }
     } catch (error) {
-        console.log(error);
-        throw error;
+        return {
+            success: false,
+            message: error?.response?.data?.message || error.message,
+            errors : error?.response?.data?.errors || []
+        }
     }
 };
 
+export const patchMultipartRequest = async (url, formData) => {
+    try {
+        const response = await axios.patch(url, formData, {
+            headers: {
+                "Content-Type": "multipart/form-data"
+            }
+        });
+
+        if (response) {
+            return response.data;
+        }
+    } catch (error) {
+        return {
+            success: false,
+            message: error?.response?.data?.message || error.message,
+            errors : error?.response?.data?.errors || []
+        }
+    }
+};

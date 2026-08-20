@@ -2,6 +2,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { profileSchema } from '../schema/profile.schema';
+import InputField from '../../../components/shared/InputField';
 
 const ProfileForm = ({ defaultValues, onSave, onCancel }) => {
   const {
@@ -26,26 +27,25 @@ const ProfileForm = ({ defaultValues, onSave, onCancel }) => {
         <label htmlFor="name" className="font-bold uppercase text-sm tracking-wide text-black">
           Full Name
         </label>
-        <input 
-          id="name"
-          {...register('name')}
-          className={`w-full p-3 border-4 focus:outline-none focus:shadow-[4px_4px_0_0_#000] transition-shadow bg-[#f8f9fa] ${errors.name ? 'border-red-500' : 'border-black'}`}
-          autoFocus
+        <InputField
+          name="name"
+          placeholder="Enter Full Name"
+          register={register("name")}
+          errors={errors.name}
         />
-        {errors.name && <span className="text-red-500 font-bold text-sm uppercase">{errors.name.message}</span>}
       </div>
 
       <div className="flex flex-col gap-2">
         <label htmlFor="email" className="font-bold uppercase text-sm tracking-wide text-black">
           Email Address
         </label>
-        <input 
-          id="email"
+        <InputField
+          name="email"
           type="email"
-          {...register('email')}
-          className={`w-full p-3 border-4 focus:outline-none focus:shadow-[4px_4px_0_0_#000] transition-shadow bg-[#f8f9fa] ${errors.email ? 'border-red-500' : 'border-black'}`}
+          placeholder="Enter Email Address"
+          register={register("email")}
+          errors={errors.email}
         />
-        {errors.email && <span className="text-red-500 font-bold text-sm uppercase">{errors.email.message}</span>}
       </div>
 
       <div className="flex justify-end gap-4 mt-4">

@@ -5,9 +5,14 @@ import { setToken as setApiToken } from '../api/api';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken_] = useState(null);
+  const [token, setToken_] = useState(localStorage.getItem('token'));
 
   const setToken = (newToken) => {
+    if (newToken) {
+      localStorage.setItem('token', newToken);
+    } else {
+      localStorage.removeItem('token');
+    }
     setToken_(newToken);
   };
 

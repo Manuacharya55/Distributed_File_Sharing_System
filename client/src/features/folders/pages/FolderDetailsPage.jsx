@@ -1,83 +1,91 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getRequest } from '../../../api/api';
+import { getRequest, deleteRequest } from '../../../api/api';
 import ImageComponent from '../../../components/shared/ImageComponent';
 import SearchBox from '../components/SearchBox';
 import FileCard from '../components/FileCard';
 import { CardShimmer } from '../../../components/shared/Loader';
 import Pagination from '../../../components/shared/Pagination';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import PendingState from '../../../components/shared/PendingState';
+import ErrorState from '../../../components/shared/ErrorState';
+import EmptyState from '../../../components/shared/EmptyState';
+import ConfirmModal from '../../../components/shared/ConfirmModal';
+
+const fetchFolderDetails = async (folderId, page, searchQuery) => {
+  const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
+  const url = `/folder/${folderId}?page=${page}${searchParam}`;
+  const response = await getRequest(url);
+  if (response?.success === false) {
+    throw new Error(response.message || "Failed to fetch folder details");
+  }
+  return response.data;
+};
 
 const FolderDetailsPage = () => {
   const { folderId } = useParams();
+  const queryClient = useQueryClient();
   
-  const [folder, setFolder] = useState(null);
-  const [files, setFiles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState(null);
 
-  // Upload Modal State
+  // Modals
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState(null);
 
-  const fetchFolderDetails = async (currentPage = page) => {
-    try {
-      setLoading(true);
-      const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
-      const url = `/folder/${folderId}?page=${currentPage}${searchParam}`;
-      const response = await getRequest(url);
-      if (response && response.data) {
-        setFolder(response.data.folder);
-        setFiles(response.data.files || []);
-        setPagination(response.data.pagination);
-      }
-    } catch (err) {
-      setError("Failed to fetch folder details.");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchFolderDetails(1);
-  }, [folderId]);
+  const { data, isPending, isError, error, refetch } = useQuery({
+    queryKey: ['folderDetails', folderId, page, searchQuery],
+    queryFn: () => fetchFolderDetails(folderId, page, searchQuery),
+    placeholderData: keepPreviousData,
+    staleTime: 60 * 1000,
+  });
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setPage(1);
-    fetchFolderDetails(1);
+    if (page !== 1) setPage(1);
   };
 
   const handlePrevious = () => {
-    if (pagination?.hasPreviousPage) {
-      const newPage = page - 1;
-      setPage(newPage);
-      fetchFolderDetails(newPage);
+    if (data?.pagination?.hasPreviousPage) {
+      setPage(page - 1);
     }
   };
 
   const handleNext = () => {
-    if (pagination?.hasNextPage) {
-      const newPage = page + 1;
-      setPage(newPage);
-      fetchFolderDetails(newPage);
+    if (data?.pagination?.hasNextPage) {
+      setPage(page + 1);
     }
   };
 
+  const handleDelete = async () => {
+    if (!fileToDelete) return;
+
+    const response = await deleteRequest(`/file/${fileToDelete}`);
+    
+    if (!response?.success) {
+      alert(response.message || "Failed to delete file.");
+      setFileToDelete(null);
+      return;
+    }
+
+    queryClient.setQueryData(['folderDetails', folderId, page, searchQuery], (oldData) => {
+      if (!oldData) return oldData;
+      return {
+        ...oldData,
+        files: oldData.files.filter((file) => file._id !== fileToDelete),
+      };
+    });
+    
+    setFileToDelete(null);
+  };
 
   const handleDownload = async (e, fileUrl, originalName) => {
     e.preventDefault();
     try {
-      const response = await fetch(fileUrl, {
-        method: 'GET',
-      });
-      
+      const response = await fetch(fileUrl, { method: 'GET' });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -86,11 +94,10 @@ const FolderDetailsPage = () => {
       link.setAttribute('download', safeFilename);
       document.body.appendChild(link);
       link.click();
-      
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Frontend download failed (Likely a CORS issue with the S3 bucket): ", error);
+      console.error("Frontend download failed: ", error);
       alert("Download failed. Please ensure your AWS S3 bucket has CORS enabled for GET requests, or download the file manually from the new tab.");
       const fallbackLink = document.createElement('a');
       fallbackLink.href = fileUrl;
@@ -102,24 +109,34 @@ const FolderDetailsPage = () => {
     }
   };
 
-  const handleUploadSuccess = () => {
+  const handleUploadSuccess = (uploadedData) => {
     setIsUploadModalOpen(false);
-    fetchFolderDetails();
+    if (uploadedData) {
+      const filesToAdd = Array.isArray(uploadedData) ? uploadedData : (uploadedData.files || [uploadedData]);
+      queryClient.setQueryData(['folderDetails', folderId, page, searchQuery], (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          files: [...filesToAdd, ...oldData.files],
+        };
+      });
+    }
   };
 
-  if (loading) {
+  if (isPending) {
     return (
-      <div className="max-w-7xl mx-auto px-6 md:px-12 py-12">
+      <PendingState title="Folder Details" subtitle="Loading Folder Details...">
         <CardShimmer count={4} />
-      </div>
+      </PendingState>
     );
   }
 
-  if (error) {
-    return <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 text-2xl font-bold uppercase text-white bg-red-500 border-4 border-black p-6 shadow-[8px_8px_0_0_#000]">{error}</div>;
+  if (isError) {
+    return <ErrorState message={error?.message} />;
   }
 
-  const folderName = folder?.name || "Unknown Folder";
+  const folderName = data?.folder?.name || "Unknown Folder";
+  const filesList = data?.files || [];
 
   return (
     <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 animate-in fade-in duration-500 relative">
@@ -144,7 +161,7 @@ const FolderDetailsPage = () => {
                 {folderName}
               </h1>
               <p className="text-sm font-bold bg-[#FF90E8] border-2 border-black inline-block px-3 py-1 shadow-[2px_2px_0_0_#000] uppercase">
-                {files.length} items
+                {filesList.length} items
               </p>
             </div>
           </div>
@@ -169,18 +186,17 @@ const FolderDetailsPage = () => {
         </div>
       </div>
 
-      {files.length === 0 ? (
-        <div className="text-3xl font-black uppercase text-center mt-20 p-12 bg-white border-4 border-black shadow-[12px_12px_0_0_#000]">
-          This folder is empty. Time to upload!
-        </div>
+      {filesList.length === 0 ? (
+        <EmptyState message="This folder is empty. Time to upload!" />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-          {files.map((file, index) => (
+          {filesList.map((file, index) => (
             <FileCard 
               key={file._id} 
               file={file} 
               index={index} 
               handleDownload={handleDownload} 
+              handleDelete={(id) => setFileToDelete(id)}
             />
           ))}
         </div>
@@ -188,9 +204,17 @@ const FolderDetailsPage = () => {
 
       {/* Pagination Controls */}
       <Pagination 
-        pagination={pagination} 
+        pagination={data?.pagination} 
         handlePrevious={handlePrevious} 
         handleNext={handleNext} 
+      />
+
+      <ConfirmModal 
+        isOpen={!!fileToDelete}
+        title="Delete File"
+        message="Are you sure you want to delete this file? This action cannot be undone."
+        onConfirm={handleDelete}
+        onCancel={() => setFileToDelete(null)}
       />
 
       {/* Upload File Modal */}

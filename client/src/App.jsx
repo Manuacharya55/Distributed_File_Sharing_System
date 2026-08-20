@@ -2,13 +2,11 @@ import { BrowserRouter, Route, Routes } from "react-router-dom"
 import LoginPage from "./features/auth/pages/LoginPage"
 import RegisterPage from "./features/auth/pages/RegisterPage"
 import NotFound from "./features/NotFound"
-import Footer from "./components/headers/Footer"
 import FilesPage from "./features/files/page/FilesPage"
 import Dashboard from "./features/dashboard/pages/Dashboard"
 import FoldersPage from "./features/folders/pages/FoldersPage"
 import FolderDetailsPage from "./features/folders/pages/FolderDetailsPage"
 import VerifyEmailPage from "./features/auth/pages/VerifyEmailPage"
-import ChangePasswordPage from "./features/auth/pages/ChangePasswordPage"
 import ProfilePage from "./features/profile/pages/ProfilePage"
 import { AuthProvider } from "./context/AuthContext"
 import ProtectedLayout from "./components/layout/ProtectedLayout"
@@ -32,7 +30,6 @@ function App() {
                 <Route path="/files" element={<FilesPage/>} />
                 <Route path="/folders" element={<FoldersPage/>} />
                 <Route path="/folders/:folderId" element={<FolderDetailsPage />} />
-                <Route path="/change-password" element={<ChangePasswordPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
               </Route>
               

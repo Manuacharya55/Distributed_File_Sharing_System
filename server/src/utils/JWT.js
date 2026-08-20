@@ -5,7 +5,7 @@ export const createToken = async (data, existingFamilyId = null) => {
     try {
         const accessToken = await jwt.sign({
             _id: data._id
-        }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1m' })
+        }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '5d' })
 
         const jti = crypto.randomUUID();
         const familyId = existingFamilyId || crypto.randomUUID();

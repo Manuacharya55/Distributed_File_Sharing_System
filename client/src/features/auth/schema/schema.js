@@ -21,3 +21,9 @@ export const loginSchema = z.object({
     .min(5, "password must have at least 5 characters")
     .max(25, "password should have less than 25 characters"),
 });
+
+export const verifyotpSchema = z.object({
+  otp: z
+    .string({ message: "OTP cannot be empty" })
+    .length(4, "OTP must be exactly 4 characters"),
+});

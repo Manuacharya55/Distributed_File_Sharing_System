@@ -1,57 +1,43 @@
-import React, { useState, useEffect } from 'react';
 import { getRequest } from '../../../api/api';
 import { DashboardShimmer } from '../../../components/shared/Loader';
 import DashBoardHeader from '../components/DashBoardHeader';
 import DashBoardGrid from '../components/DashBoardGrid';
 import RecentActivity from '../components/RecentActivity';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import PendingState from '../../../components/shared/PendingState';
+import ErrorState from '../../../components/shared/ErrorState';
 
 const Dashboard = () => {
-  const [dashboardData, setDashboardData] = useState({ stats: null, recentActivity: [] });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        setLoading(true);
-        const response = await getRequest('/dashboard');
-        if (response && response.data) {
-          setDashboardData(response.data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch dashboard data:", err);
-        setError("Failed to load dashboard data.");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchDashboardDetails = async()=>{
+    const response = await getRequest('/dashboard');
+    if(!response.success){
+      throw new Error(response.message)
+    }
+    return response.data;
+  }
 
-    fetchDashboard();
-  }, []);
+  const { isPending, isError, data, error } = useQuery({
+    queryKey: ['dashboard'],
+    queryFn: fetchDashboardDetails,
+    placeholderData : keepPreviousData,
+    staleTime : 60 * 1000
+  })
 
-  if (loading) {
+
+  if (isPending) {
     return (
-      <div className="max-w-7xl mx-auto px-6 md:px-12 py-12">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
-          <div>
-            <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-black uppercase mb-4">
-              Dashboard
-            </h1>
-            <p className="text-xl font-bold bg-[#FFC900] border-2 border-black px-4 py-2 shadow-[4px_4px_0_0_#000] inline-block text-transparent">
-              Loading...
-            </p>
-          </div>
-        </div>
+      <PendingState title="Dashboard" subtitle="Loading...">
         <DashboardShimmer />
-      </div>
+      </PendingState>
     );
   }
 
-  if (error) {
-    return <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 text-2xl font-bold uppercase text-white bg-red-500 border-4 border-black p-6 shadow-[8px_8px_0_0_#000]">{error}</div>;
+  if (isError) {
+    return <ErrorState message={error?.message} />;
   }
 
-  const { stats, recentActivity } = dashboardData;
+  const { stats, recentActivity } = data;
 
   const statsDisplay = [
     { label: 'Total Files', count: stats?.totalFiles || 0, icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', color: 'bg-[#FF90E8]' },

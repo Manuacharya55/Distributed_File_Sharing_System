@@ -1,21 +1,21 @@
 const InputField = ({ placeholder, name, register, errors, type = "text" }) => {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1 w-full">
       <input
         id={name}
         type={type}
         placeholder={placeholder}
         {...register}
-        className={`w-full px-4 mt-2 py-2.5 rounded border bg-transparent text-sm outline-none transition-colors
+        className={`w-full p-3 border-4 focus:outline-none focus:shadow-[4px_4px_0_0_#000] transition-shadow bg-[#f8f9fa] text-black font-medium
           ${
             errors
-              ? "border-red-500 focus:border-red-500"
-              : "border-gray-300 focus:border-black"
+              ? "border-red-500"
+              : "border-black"
           }
         `}
       />
       {errors && (
-        <span className="text-red-500 text-xs">{errors.message}</span>
+        <span className="text-red-500 font-bold text-sm uppercase">{errors.message}</span>
       )}
     </div>
   );

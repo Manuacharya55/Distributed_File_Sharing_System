@@ -36,9 +36,15 @@ const ImageComponent = ({ folderId, onUploadSuccess, onCancel }) => {
       formImageData.append("folder", folderId);
     }
     const response = await postMultipartRequest("/file/", formImageData);
+    
+    if (response?.success === false) {
+      alert(response.message || "Failed to upload files.");
+      return;
+    }
+
     setSelectedImages([]);
     setPreviewUrls([]);
-    if (onUploadSuccess) onUploadSuccess();
+    if (onUploadSuccess) onUploadSuccess(response?.data);
   };
 
   return (

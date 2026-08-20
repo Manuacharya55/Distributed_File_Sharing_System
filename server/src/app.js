@@ -9,6 +9,7 @@ import fileRouter from "./routes/file.router.js"
 import folderRouter from "./routes/folder.router.js"
 import dashboardRouter from "./routes/dashboard.router.js"
 import userRouter from "./routes/user.router.js"
+import { NotFoundError } from "./utils/ApiError.js";
 
 const app = express();
 
@@ -31,6 +32,12 @@ app.use("/api/v1/folder",folderRouter)
 app.use("/api/v1/dashboard",dashboardRouter)
 app.use("/api/v1/user",userRouter)
 
+
+app.use((req, res, next) => {
+    next(new NotFoundError(`Route ${req.originalUrl} not found`));
+})
+
 app.use(globalError)
+
 
 export default app;
