@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { passwordSchema } from '../schema/profile.schema';
 import InputField from '../../../components/shared/InputField';
+import Button from '../../../components/shared/Button';
 import { setFormErrors } from '../../../utils/formErrors';
 
 const PasswordForm = ({ onSave, onCancel }) => {
@@ -62,22 +63,21 @@ const PasswordForm = ({ onSave, onCancel }) => {
         />
       </div>
 
-      <div className="flex justify-end gap-4 mt-4">
+      <div className="flex justify-end items-center gap-4 mt-2">
         <button 
           type="button" 
           onClick={onCancel}
           disabled={isSubmitting}
-          className="px-6 py-3 bg-gray-200 border-4 border-black font-black uppercase hover:-translate-y-1 hover:shadow-[4px_4px_0_0_#000] transition-all text-black disabled:opacity-50"
+          className="px-6 py-3.5 bg-gray-200 border-4 border-black font-black uppercase hover:bg-gray-300 transition-all text-black cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Cancel
         </button>
-        <button 
-          type="submit" 
-          disabled={isSubmitting}
-          className="px-6 py-3 bg-yellow-300 text-black border-4 border-black font-black uppercase hover:-translate-y-1 hover:shadow-[4px_4px_0_0_#000] transition-all disabled:opacity-50"
-        >
-          {isSubmitting ? "Updating..." : "Update Password"}
-        </button>
+        <Button 
+          name="Update Password"
+          isProcessing={isSubmitting}
+          type="submit"
+          className="w-auto"
+        />
       </div>
     </form>
   );

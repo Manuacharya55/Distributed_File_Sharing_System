@@ -1,4 +1,5 @@
 import React from 'react';
+import { Search } from 'lucide-react';
 
 const SearchBox = ({ handleSearch, searchQuery, setSearchQuery, placeholder = "Search folders..." }) => {
   return (
@@ -12,8 +13,9 @@ const SearchBox = ({ handleSearch, searchQuery, setSearchQuery, placeholder = "S
       />
       <button 
         type="submit"
-        className="px-4 py-3 bg-cyan-300 text-black border-y-4 border-r-4 border-black font-black uppercase text-lg"
+        className="px-4 py-3 bg-cyan-300 text-black border-y-4 border-r-4 border-black font-black uppercase text-lg flex items-center gap-2 cursor-pointer hover:bg-cyan-400 transition-colors"
       >
+        <Search className="w-5 h-5 stroke-[2.5]" />
         Search
       </button>
     </form>

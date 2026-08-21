@@ -2,24 +2,26 @@ import { ApiSuccess } from "../utils/ApiSuccess.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import File from "../models/file.model.js";
 import Folder from "../models/folder.model.js";
+import User from "../models/user.model.js";
 
 export const getDashboardStats = asyncHandler(async (req, res) => {
     const userId = req.user._id;
 
-    const [totalFiles, totalFolders, totalImages, totalDocuments] = await Promise.all([
-        File.countDocuments({ user: userId }),
-        Folder.countDocuments({ user: userId }),
-        File.countDocuments({ user: userId, mimeType: { $regex: /^image\// } }),
-        File.countDocuments({ user: userId, mimeType: { $not: { $regex: /^image\// } } })
+    const [totalFiles, totalFolders, totalImages, totalDocuments, user] = await Promise.all([
+        File.countDocuments({ user: userId, isDeleted: false }),
+        Folder.countDocuments({ user: userId, isDeleted: false }),
+        File.countDocuments({ user: userId, isDeleted: false, mimeType: { $regex: /^image\// } }),
+        File.countDocuments({ user: userId, isDeleted: false, mimeType: { $not: { $regex: /^image\// } } }),
+        User.findById(userId).select("usedStorage storageLimit").lean()
     ]);
 
-    const recentFiles = await File.find({ user: userId })
+    const recentFiles = await File.find({ user: userId, isDeleted: false })
         .sort({ createdAt: -1 })
         .limit(5)
         .select('originalName mimeType createdAt size')
         .lean();
 
-    const recentFolders = await Folder.find({ user: userId })
+    const recentFolders = await Folder.find({ user: userId, isDeleted: false })
         .sort({ createdAt: -1 })
         .limit(5)
         .select('name createdAt')
@@ -52,7 +54,9 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
         totalFiles,
         totalFolders,
         totalImages,
-        totalDocuments
+        totalDocuments,
+        usedStorage: user?.usedStorage || 0,
+        storageLimit: user?.storageLimit || 1073741824 // 1GB
     };
 
     res.status(200).json(new ApiSuccess(200, { stats, recentActivity }, "Dashboard stats retrieved successfully"));

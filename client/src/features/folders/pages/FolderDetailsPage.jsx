@@ -3,7 +3,9 @@ import { useParams, Link } from 'react-router-dom';
 import { getRequest, deleteRequest } from '../../../api/api';
 import ImageComponent from '../../../components/shared/ImageComponent';
 import SearchBox from '../components/SearchBox';
-import FileCard from '../components/FileCard';
+import FileCard from '../../files/components/FileCard';
+import FilePreviewModal from '../../files/components/FilePreviewModal';
+import ShareModal from '../../files/components/ShareModal';
 import { CardShimmer } from '../../../components/shared/Loader';
 import Pagination from '../../../components/shared/Pagination';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
@@ -11,22 +13,21 @@ import PendingState from '../../../components/shared/PendingState';
 import ErrorState from '../../../components/shared/ErrorState';
 import EmptyState from '../../../components/shared/EmptyState';
 import ConfirmModal from '../../../components/shared/ConfirmModal';
-
 import { downloadFile } from '../../../utils/downloadFile';
+import { useToast } from '../../../context/ToastContext';
+import { ArrowLeft, Folder, UploadCloud, Share2 } from 'lucide-react';
 
 const fetchFolderDetails = async (folderId, page, searchQuery) => {
   const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
   const url = `/folder/${folderId}?page=${page}${searchParam}`;
   const response = await getRequest(url);
-  if (response?.success === false) {
-    throw new Error(response.message || "Failed to fetch folder details");
-  }
   return response.data;
 };
 
 const FolderDetailsPage = () => {
   const { folderId } = useParams();
   const queryClient = useQueryClient();
+  const toast = useToast();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -34,12 +35,15 @@ const FolderDetailsPage = () => {
   // Modals
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
+  const [shareFile, setShareFile] = useState(null);
 
-  const { data, isPending, isError, error, refetch } = useQuery({
+  const { data, isPending, isError, error } = useQuery({
     queryKey: ['folderDetails', folderId, page, searchQuery],
     queryFn: () => fetchFolderDetails(folderId, page, searchQuery),
     placeholderData: keepPreviousData,
-    staleTime: 60 * 1000,
+    staleTime: 30 * 1000,
   });
 
   const handleSearch = (e) => {
@@ -60,25 +64,22 @@ const FolderDetailsPage = () => {
   };
 
   const handleDelete = async () => {
-    if (!fileToDelete) return;
+    if (!fileToDelete || isDeleting) return;
 
-    const response = await deleteRequest(`/file/${fileToDelete}`);
-    
-    if (!response?.success) {
-      alert(response.message || "Failed to delete file.");
+    setIsDeleting(true);
+    try {
+      await deleteRequest(`/file/${fileToDelete}`);
+      toast.success("File moved to trash");
+      queryClient.invalidateQueries({ queryKey: ['folderDetails', folderId] });
+      queryClient.invalidateQueries({ queryKey: ['files'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['trash'] });
+    } catch (err) {
+      toast.error(err.message || "Failed to delete file.");
+    } finally {
+      setIsDeleting(false);
       setFileToDelete(null);
-      return;
     }
-
-    queryClient.setQueryData(['folderDetails', folderId, page, searchQuery], (oldData) => {
-      if (!oldData) return oldData;
-      return {
-        ...oldData,
-        files: oldData.files.filter((file) => file._id !== fileToDelete),
-      };
-    });
-    
-    setFileToDelete(null);
   };
 
   const handleDownload = (e, fileUrl, originalName) => {
@@ -86,18 +87,11 @@ const FolderDetailsPage = () => {
     downloadFile(fileUrl, originalName);
   };
 
-  const handleUploadSuccess = (uploadedData) => {
+  const handleUploadSuccess = () => {
     setIsUploadModalOpen(false);
-    if (uploadedData) {
-      const filesToAdd = Array.isArray(uploadedData) ? uploadedData : (uploadedData.files || [uploadedData]);
-      queryClient.setQueryData(['folderDetails', folderId, page, searchQuery], (oldData) => {
-        if (!oldData) return oldData;
-        return {
-          ...oldData,
-          files: [...filesToAdd, ...oldData.files],
-        };
-      });
-    }
+    queryClient.invalidateQueries({ queryKey: ['folderDetails', folderId] });
+    queryClient.invalidateQueries({ queryKey: ['files'] });
+    queryClient.invalidateQueries({ queryKey: ['dashboard'] });
   };
 
   if (isPending) {
@@ -122,16 +116,12 @@ const FolderDetailsPage = () => {
       <div className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <Link to="/folders" className="inline-flex items-center text-sm font-black tracking-widest text-black hover:bg-[#FFC900] border-2 border-transparent hover:border-black hover:shadow-[4px_4px_0_0_#000] px-4 py-2 transition-all mb-6 group uppercase">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
+            <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform stroke-[3]" />
             Back to Folders
           </Link>
           <div className="flex items-center gap-6">
             <div className="w-16 h-16 bg-white border-4 border-black shadow-[4px_4px_0_0_#000] flex items-center justify-center text-black">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-              </svg>
+              <Folder className="h-8 w-8 stroke-[2.5]" />
             </div>
             <div>
               <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-black uppercase mb-1">
@@ -153,11 +143,9 @@ const FolderDetailsPage = () => {
 
           <button 
             onClick={() => setIsUploadModalOpen(true)}
-            className="inline-flex items-center justify-center px-8 py-4 bg-[#00FF00] text-black border-4 border-black font-black uppercase text-xl shadow-[6px_6px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[8px_8px_0_0_#000] active:shadow-none active:translate-y-[6px] active:translate-x-[6px] transition-all gap-3 w-full md:w-auto"
+            className="inline-flex items-center justify-center px-8 py-4 bg-[#00FF00] text-black border-4 border-black font-black uppercase text-xl shadow-[6px_6px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[8px_8px_0_0_#000] active:shadow-none active:translate-y-[6px] active:translate-x-[6px] transition-all gap-3 w-full md:w-auto cursor-pointer"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
+            <UploadCloud className="h-6 w-6 stroke-[3]" />
             Upload File
           </button>
         </div>
@@ -174,6 +162,8 @@ const FolderDetailsPage = () => {
               index={index} 
               handleDownload={handleDownload} 
               handleDelete={(id) => setFileToDelete(id)}
+              onPreview={(f) => setPreviewFile(f)}
+              onShare={(f) => setShareFile(f)}
             />
           ))}
         </div>
@@ -188,10 +178,22 @@ const FolderDetailsPage = () => {
 
       <ConfirmModal 
         isOpen={!!fileToDelete}
-        title="Delete File"
-        message="Are you sure you want to delete this file? This action cannot be undone."
+        title="Move File to Trash"
+        message="Are you sure you want to move this file to trash? You can restore it later from Trash Bin."
         onConfirm={handleDelete}
         onCancel={() => setFileToDelete(null)}
+      />
+
+      <FilePreviewModal
+        file={previewFile}
+        isOpen={!!previewFile}
+        onClose={() => setPreviewFile(null)}
+      />
+
+      <ShareModal
+        file={shareFile}
+        isOpen={!!shareFile}
+        onClose={() => setShareFile(null)}
       />
 
       {/* Upload File Modal */}

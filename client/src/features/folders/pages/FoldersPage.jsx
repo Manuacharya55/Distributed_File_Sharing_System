@@ -4,6 +4,7 @@ import Modal from '../components/Modal';
 import FolderForm from '../components/FolderForm';
 import FolderCard from '../components/FolderCard';
 import FolderPageHeader from '../components/FolderPageHeader';
+import ShareModal from '../../files/components/ShareModal';
 import { CardShimmer } from '../../../components/shared/Loader';
 import Pagination from '../../../components/shared/Pagination';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
@@ -11,19 +12,18 @@ import ErrorState from '../../../components/shared/ErrorState';
 import PendingState from '../../../components/shared/PendingState';
 import EmptyState from '../../../components/shared/EmptyState';
 import ConfirmModal from '../../../components/shared/ConfirmModal';
+import { useToast } from '../../../context/ToastContext';
 
 const fetchFolders = async (page, searchQuery) => {
   const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
   const url = `/folder?page=${page}${searchParam}`;
   const response = await getRequest(url);
-  if (!response.success) {
-    throw new Error(response.message);
-  }
   return response.data;
 };
 
 const FoldersPage = () => {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
 
@@ -33,12 +33,13 @@ const FoldersPage = () => {
   const [currentFolder, setCurrentFolder] = useState(null);
   const [folderNameInput, setFolderNameInput] = useState("");
   const [folderToDelete, setFolderToDelete] = useState(null);
+  const [isFormProcessing, setIsFormProcessing] = useState(false);
 
-  const { data, isPending, isError, error, refetch } = useQuery({
+  const { data, isPending, isError, error } = useQuery({
     queryKey: ["folders", page, searchQuery],
     queryFn: () => fetchFolders(page, searchQuery),
     placeholderData: keepPreviousData,
-    staleTime: 60 * 1000,
+    staleTime: 30 * 1000,
   });
 
   const handleSearch = (e) => {
@@ -60,74 +61,58 @@ const FoldersPage = () => {
 
   const handleCreateFolder = async (e) => {
     e.preventDefault();
-    if (!folderNameInput.trim()) return;
+    if (!folderNameInput.trim() || isFormProcessing) return;
 
-    const response = await postRequest('/folder', { name: folderNameInput });
-    if (!response.success) {
-      alert(response.message || "Error creating folder");
-      return;
-    }
-
-    setIsAddModalOpen(false);
-    setFolderNameInput("");
-    
-    if (response?.data) {
-      queryClient.setQueryData(['folders', page, searchQuery], (oldData) => {
-        if (!oldData) return oldData;
-        return {
-          ...oldData,
-          folders: [response.data, ...oldData.folders],
-        };
-      });
+    setIsFormProcessing(true);
+    try {
+      await postRequest('/folder', { name: folderNameInput });
+      toast.success("Folder created successfully");
+      setIsAddModalOpen(false);
+      setFolderNameInput("");
+      queryClient.invalidateQueries({ queryKey: ['folders'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    } catch (err) {
+      toast.error(err.message || "Error creating folder");
+    } finally {
+      setIsFormProcessing(false);
     }
   };
 
   const handleEditFolder = async (e) => {
     e.preventDefault();
-    if (!folderNameInput.trim() || !currentFolder) return;
+    if (!folderNameInput.trim() || !currentFolder || isFormProcessing) return;
 
-    const response = await patchRequest(`/folder/${currentFolder._id}`, { name: folderNameInput });
-    if (response.success === false) {
-      alert(response.message || "Error updating folder");
-      return;
+    setIsFormProcessing(true);
+    try {
+      await patchRequest(`/folder/${currentFolder._id}`, { name: folderNameInput });
+      toast.success("Folder updated successfully");
+      setIsEditModalOpen(false);
+      setCurrentFolder(null);
+      setFolderNameInput("");
+      queryClient.invalidateQueries({ queryKey: ['folders'] });
+    } catch (err) {
+      toast.error(err.message || "Error updating folder");
+    } finally {
+      setIsFormProcessing(false);
     }
-
-    setIsEditModalOpen(false);
-    
-    if (response?.data) {
-      queryClient.setQueryData(['folders', page, searchQuery], (oldData) => {
-        if (!oldData) return oldData;
-        return {
-          ...oldData,
-          folders: oldData.folders.map(f => f._id === currentFolder._id ? response.data : f),
-        };
-      });
-    }
-    
-    setCurrentFolder(null);
-    setFolderNameInput("");
   };
 
   const handleDeleteFolder = async () => {
-    if (!folderToDelete) return;
+    if (!folderToDelete || isFormProcessing) return;
 
-    const response = await deleteRequest(`/folder/${folderToDelete}`);
-    
-    if (response.success === false) {
-      alert(response.message || "Failed to delete folder.");
+    setIsFormProcessing(true);
+    try {
+      await deleteRequest(`/folder/${folderToDelete}`);
+      toast.success("Folder deletion scheduled in background");
+      queryClient.invalidateQueries({ queryKey: ['folders'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['trash'] });
+    } catch (err) {
+      toast.error(err.message || "Failed to delete folder.");
+    } finally {
+      setIsFormProcessing(false);
       setFolderToDelete(null);
-      return;
     }
-
-    queryClient.setQueryData(['folders', page, searchQuery], (oldData) => {
-      if (!oldData) return oldData;
-      return {
-        ...oldData,
-        folders: oldData.folders.filter((folder) => folder._id !== folderToDelete),
-      };
-    });
-    
-    setFolderToDelete(null);
   };
 
   const openAddModal = () => {
@@ -195,6 +180,7 @@ const FoldersPage = () => {
           setFolderNameInput={setFolderNameInput}
           onCancel={() => setIsAddModalOpen(false)}
           isEdit={false}
+          isProcessing={isFormProcessing}
         />
       </Modal>
 
@@ -206,13 +192,14 @@ const FoldersPage = () => {
           setFolderNameInput={setFolderNameInput}
           onCancel={() => setIsEditModalOpen(false)}
           isEdit={true}
+          isProcessing={isFormProcessing}
         />
       </Modal>
 
       <ConfirmModal
         isOpen={!!folderToDelete}
-        title="Delete Folder"
-        message="Are you sure you want to delete this folder? This action cannot be undone."
+        title="Delete Folder (Background Cascade)"
+        message="Are you sure you want to delete this folder? All contained sub-folders and files will be permanently purged in the background."
         onConfirm={handleDeleteFolder}
         onCancel={() => setFolderToDelete(null)}
       />

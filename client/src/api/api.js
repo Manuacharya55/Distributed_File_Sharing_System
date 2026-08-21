@@ -1,7 +1,10 @@
 import axios from "axios";
 
-axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
-axios.defaults.withCredentials = true;
+// Dedicated axios instance for Backend API calls
+const apiClient = axios.create({
+    baseURL: import.meta.env.VITE_BASE_URL || "/api/v1",
+    withCredentials: true,
+});
 
 let inMemoryToken = null;
 
@@ -9,7 +12,8 @@ export const setToken = (token) => {
     inMemoryToken = token;
 };
 
-axios.interceptors.request.use(
+// Request interceptor to attach JWT token to backend calls
+apiClient.interceptors.request.use(
     (config) => {
         if (inMemoryToken) {
             config.headers.Authorization = `Bearer ${inMemoryToken}`;
@@ -32,28 +36,28 @@ const processQueue = (error, token = null) => {
             prom.resolve(token);
         }
     });
-    
+
     failedQueue = [];
 };
 
-axios.interceptors.response.use(
+// Response interceptor to handle auto token refreshing
+apiClient.interceptors.response.use(
     (response) => {
         return response;
     },
     async (error) => {
         const originalRequest = error.config;
-        console.log(error)
         if (error.response && error.response.status === 401 && error.response.data?.message === "Token Expired" && !originalRequest._retry) {
             if (originalRequest.url.includes('/auth/refresh-token')) {
                 return Promise.reject(error);
             }
 
             if (isRefreshing) {
-                return new Promise(function(resolve, reject) {
+                return new Promise(function (resolve, reject) {
                     failedQueue.push({ resolve, reject });
                 }).then(token => {
                     originalRequest.headers.Authorization = 'Bearer ' + token;
-                    return axios(originalRequest);
+                    return apiClient(originalRequest);
                 }).catch(err => {
                     return Promise.reject(err);
                 });
@@ -61,141 +65,130 @@ axios.interceptors.response.use(
 
             originalRequest._retry = true;
             isRefreshing = true;
-            
+
             try {
-                // baseURL is applied automatically by axios
-                const response = await axios.get('/auth/refresh-token');
+                const response = await apiClient.get('/auth/refresh-token');
                 if (response.data && response.data.data && response.data.data.token) {
                     const newToken = response.data.data.token;
                     setToken(newToken);
-                    
+
                     originalRequest.headers.Authorization = `Bearer ${newToken}`;
                     processQueue(null, newToken);
-                    return axios(originalRequest);
+                    return apiClient(originalRequest);
                 }
             } catch (refreshError) {
-                // Refresh token is expired or invalid
                 processQueue(refreshError, null);
                 setToken(null);
-                window.location.href = '/'; 
+                window.location.href = '/login';
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;
             }
         }
-        
+
         return Promise.reject(error);
     }
 );
 
-// --- JSON Requests ---
+const extractErrorMessage = (error) => {
+    const message = error?.response?.data?.message || error?.message || "An unexpected error occurred";
+    const errors = error?.response?.data?.errors || [];
+    const customError = new Error(message);
+    customError.errors = errors;
+    customError.statusCode = error?.response?.status;
+    customError.response = error?.response;
+    return customError;
+};
+
+// --- Backend API Requests ---
 
 export const getRequest = async (url) => {
     try {
-        const response = await axios.get(url);
-        if (response) {
-            return response.data;
-        }
+        const response = await apiClient.get(url);
+        return response.data;
     } catch (error) {
-        return {
-            success : false,
-            message : error?.response?.data?.message || error.message,
-            errors : error?.response?.data?.errors || []
-        }
+        throw extractErrorMessage(error);
     }
 };
 
 export const postRequest = async (url, data) => {
     try {
-        const response = await axios.post(url, data, {
+        const response = await apiClient.post(url, data, {
             headers: {
                 "Content-Type": "application/json"
             }
         });
-        if (response) {
-            return response.data;
-        }
+        return response.data;
     } catch (error) {
-        return {
-            success: false,
-            message: error?.response?.data?.message || error.message,
-            errors : error?.response?.data?.errors || []
-        }
+        throw extractErrorMessage(error);
     }
 };
 
 export const patchRequest = async (url, data) => {
     try {
-        const response = await axios.patch(url, data, {
+        const response = await apiClient.patch(url, data, {
             headers: {
                 "Content-Type": "application/json"
             }
         });
-        if (response) {
-            return response.data;
-        }
+        return response.data;
     } catch (error) {
-        return {
-            success: false,
-            message: error?.response?.data?.message || error.message,
-            errors : error?.response?.data?.errors || []
-        }
+        throw extractErrorMessage(error);
     }
 };
 
-export const deleteRequest = async (url) => {
+export const deleteRequest = async (url, data) => {
     try {
-        const response = await axios.delete(url);
-        if (response) {
-            return response.data;
-        }
+        const response = await apiClient.delete(url, { data });
+        return response.data;
     } catch (error) {
-        return {
-            success: false,
-            message: error?.response?.data?.message || error.message,
-            errors : error?.response?.data?.errors || []
-        }
+        throw extractErrorMessage(error);
     }
 };
 
-// --- Multipart (File Upload) Requests ---
+// --- Direct S3 Presigned Upload (Bypasses Node RAM) ---
+
+export const uploadToS3PresignedUrl = async (presignedUrl, file, onProgress) => {
+    const response = await fetch(presignedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+        body: file,
+    });
+
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`S3 upload failed (${response.status}): ${text}`);
+    }
+
+    if (onProgress) onProgress(100);
+    return response;
+};
+
+
+// --- Multipart Requests ---
 
 export const postMultipartRequest = async (url, formData) => {
     try {
-        const response = await axios.post(url, formData, {
+        const response = await apiClient.post(url, formData, {
             headers: {
                 "Content-Type": "multipart/form-data"
             }
         });
-
-        if (response) {
-            return response.data;
-        }
+        return response.data;
     } catch (error) {
-        return {
-            success: false,
-            message: error?.response?.data?.message || error.message,
-            errors : error?.response?.data?.errors || []
-        }
+        throw extractErrorMessage(error);
     }
 };
 
 export const patchMultipartRequest = async (url, formData) => {
     try {
-        const response = await axios.patch(url, formData, {
+        const response = await apiClient.patch(url, formData, {
             headers: {
                 "Content-Type": "multipart/form-data"
             }
         });
-
-        if (response) {
-            return response.data;
-        }
+        return response.data;
     } catch (error) {
-        return {
-            success: false,
-            message: error?.response?.data?.message || error.message,
-            errors : error?.response?.data?.errors || []
-        }
+        throw extractErrorMessage(error);
     }
 };

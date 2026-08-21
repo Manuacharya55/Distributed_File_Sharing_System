@@ -1,5 +1,6 @@
 import React from 'react';
 import SearchBox from './SearchBox';
+import { Plus } from 'lucide-react';
 
 const FolderPageHeader = ({ handleSearch, searchQuery, setSearchQuery, openAddModal }) => {
   return (
@@ -24,11 +25,9 @@ const FolderPageHeader = ({ handleSearch, searchQuery, setSearchQuery, openAddMo
 
         <button 
           onClick={openAddModal}
-          className="inline-flex items-center justify-center px-8 py-4 bg-[#00FF00] text-black border-4 border-black font-black uppercase text-xl shadow-[6px_6px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[8px_8px_0_0_#000] active:shadow-none active:translate-y-[6px] active:translate-x-[6px] transition-all gap-3 w-full md:w-auto"
+          className="inline-flex items-center justify-center px-8 py-4 bg-[#00FF00] text-black border-4 border-black font-black uppercase text-xl shadow-[6px_6px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[8px_8px_0_0_#000] active:shadow-none active:translate-y-[6px] active:translate-x-[6px] transition-all gap-3 w-full md:w-auto cursor-pointer"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
-          </svg>
+          <Plus className="h-6 w-6 stroke-[3]" />
           New Folder
         </button>
       </div>

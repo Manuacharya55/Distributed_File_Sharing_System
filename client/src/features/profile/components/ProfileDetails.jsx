@@ -1,4 +1,5 @@
 import React from 'react';
+import { Edit3 } from 'lucide-react';
 
 const ProfileDetails = ({ profile, setIsEditingProfile }) => {
   return (
@@ -7,8 +8,9 @@ const ProfileDetails = ({ profile, setIsEditingProfile }) => {
         <h1 className="text-3xl font-black uppercase">Profile Details</h1>
         <button 
           onClick={() => setIsEditingProfile(true)}
-          className="px-4 py-2 bg-black text-white font-bold uppercase border-2 border-black hover:bg-white hover:text-black transition-colors"
+          className="px-4 py-2 bg-black text-white font-bold uppercase border-2 border-black hover:bg-white hover:text-black transition-colors flex items-center gap-2 cursor-pointer"
         >
+          <Edit3 className="w-4 h-4" />
           Edit
         </button>
       </div>

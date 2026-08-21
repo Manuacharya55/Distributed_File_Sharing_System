@@ -12,6 +12,7 @@ const NavBar = () => {
     { name: 'Dashboard', path: '/' },
     { name: 'Files', path: '/files' },
     { name: 'Folders', path: '/folders' },
+    { name: 'Trash', path: '/trash' },
     { name: 'Profile', path: '/profile' }
   ]
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { FileText, Download, Trash2 } from 'lucide-react';
 
 const getFileColor = (index) => {
   const colors = ['bg-[#FF90E8]', 'bg-[#FFC900]', 'bg-[#00FF00]', 'bg-[#8A2BE2]', 'bg-cyan-300', 'bg-red-400'];
@@ -27,9 +28,7 @@ const FileCard = ({ file, index, handleDownload, handleDelete }) => {
            {file.mimeType && file.mimeType.includes('image') ? (
              <img src={file.fileUrl} alt={displayFileName} className="w-full h-full object-cover" />
            ) : (
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-             </svg>
+             <FileText className="h-10 w-10 stroke-[2.5]" />
            )}
          </div>
       </div>
@@ -50,22 +49,18 @@ const FileCard = ({ file, index, handleDownload, handleDelete }) => {
         <div className="flex gap-2">
           <button 
             onClick={(e) => handleDownload(e, file.fileUrl, downloadFileName)}
-            className="bg-white border-2 border-black p-1 hover:bg-gray-200 transition-colors"
+            className="bg-white border-2 border-black p-1.5 hover:bg-gray-200 transition-colors cursor-pointer"
             title="Download"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
+            <Download className="h-4 w-4 stroke-[3]" />
           </button>
           {handleDelete && (
             <button 
               onClick={() => handleDelete(file._id)}
-              className="bg-red-500 text-white border-2 border-black p-1 hover:bg-red-600 transition-colors"
+              className="bg-red-500 text-white border-2 border-black p-1.5 hover:bg-red-600 transition-colors cursor-pointer"
               title="Delete"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
+              <Trash2 className="h-4 w-4 stroke-[3]" />
             </button>
           )}
         </div>

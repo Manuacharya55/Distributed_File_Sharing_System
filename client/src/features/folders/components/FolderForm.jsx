@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { folderSchema } from '../schema/folder.schema';
+import Button from '../../../components/shared/Button';
 
-const FolderForm = ({ onSubmit, folderNameInput, setFolderNameInput, onCancel, isEdit = false }) => {
+const FolderForm = ({ onSubmit, folderNameInput, setFolderNameInput, onCancel, isEdit = false, isProcessing = false }) => {
   const [error, setError] = useState(null);
 
   const handleSubmit = (e) => {
@@ -18,36 +19,39 @@ const FolderForm = ({ onSubmit, folderNameInput, setFolderNameInput, onCancel, i
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="mb-6">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <div>
         <label className="block text-sm font-bold uppercase text-black mb-2">Folder Name</label>
         <input 
           type="text" 
           value={folderNameInput}
+          disabled={isProcessing}
           onChange={(e) => {
             setFolderNameInput(e.target.value);
             if (error) setError(null);
           }}
-          className={`w-full border-4 p-3 text-lg font-bold focus:outline-none focus:ring-4 ${error ? 'border-red-500' : 'border-black'} ${isEdit ? 'focus:ring-[#FFC900]' : 'focus:ring-[#FF90E8]'}`}
+          className={`w-full border-4 p-3 text-lg font-bold bg-[#f8f9fa] focus:outline-none focus:shadow-[4px_4px_0_0_#000] transition-shadow ${error ? 'border-red-500' : 'border-black'}`}
           placeholder={isEdit ? "Folder Name" : "e.g. Secret Documents"}
           autoFocus
         />
         {error && <span className="text-red-500 font-bold text-sm uppercase mt-2 block">{error}</span>}
       </div>
-      <div className="flex justify-end gap-4">
+
+      <div className="flex justify-end items-center gap-4">
         <button 
           type="button" 
           onClick={onCancel}
-          className="px-6 py-3 bg-gray-200 border-4 border-black font-black uppercase hover:-translate-y-1 hover:shadow-[4px_4px_0_0_#000] transition-all"
+          disabled={isProcessing}
+          className="px-6 py-3.5 bg-gray-200 border-4 border-black font-black uppercase hover:bg-gray-300 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Cancel
         </button>
-        <button 
-          type="submit" 
-          className={`px-6 py-3 ${isEdit ? 'bg-[#FFC900]' : 'bg-[#00FF00]'} border-4 border-black font-black uppercase hover:-translate-y-1 hover:shadow-[4px_4px_0_0_#000] transition-all`}
-        >
-          {isEdit ? 'Save' : 'Create'}
-        </button>
+        <Button 
+          name={isEdit ? 'Save Folder' : 'Create Folder'}
+          isProcessing={isProcessing}
+          type="submit"
+          className="w-auto"
+        />
       </div>
     </form>
   );

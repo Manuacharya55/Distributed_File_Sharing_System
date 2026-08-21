@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { KeyRound, Camera } from 'lucide-react';
 
 const ProfileSidebar = ({ profile, handleAvatarUpload, setIsEditingPassword }) => {
   const fileInputRef = useRef(null);
@@ -22,8 +23,9 @@ const ProfileSidebar = ({ profile, handleAvatarUpload, setIsEditingPassword }) =
           src={profile?.avatar || defaultAvatar} 
           alt="Profile avatar" 
         />
-        <div className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center transition-all duration-300">
-          <span className="text-white font-bold text-xs uppercase tracking-widest text-center">Change<br/>Avatar</span>
+        <div className="absolute inset-0 bg-black/60 hidden group-hover:flex flex-col items-center justify-center transition-all duration-300 gap-1">
+          <Camera className="w-5 h-5 text-white stroke-[2.5]" />
+          <span className="text-white font-bold text-[10px] uppercase tracking-widest text-center">Change Avatar</span>
         </div>
         <input 
           type="file" 
@@ -34,12 +36,13 @@ const ProfileSidebar = ({ profile, handleAvatarUpload, setIsEditingPassword }) =
         />
       </div>
       <h2 className="text-2xl font-black uppercase text-center mb-1">{profile?.name || 'User'}</h2>
-      <p className="text-gray-600 font-bold text-center mb-6">{profile?.email}</p>
+      <p className="text-gray-600 font-bold text-center mb-6 text-sm">{profile?.email}</p>
       
       <button 
         onClick={() => setIsEditingPassword(true)}
-        className="w-full py-3 bg-yellow-300 border-2 border-black text-black font-black uppercase text-center shadow-[4px_4px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_0_#000] active:shadow-none active:translate-y-[4px] active:translate-x-[4px] transition-all"
+        className="w-full py-3 bg-yellow-300 border-2 border-black text-black font-black uppercase text-center shadow-[4px_4px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_0_#000] active:shadow-none active:translate-y-[4px] active:translate-x-[4px] transition-all flex items-center justify-center gap-2 cursor-pointer"
       >
+        <KeyRound className="w-4 h-4 stroke-[2.5]" />
         Change Password
       </button>
     </div>

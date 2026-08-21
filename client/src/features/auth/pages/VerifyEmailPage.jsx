@@ -1,14 +1,25 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { postRequest } from '../../../api/api';
 import VerifyEmailForm from '../components/VerifyEmailForm';
+import { Zap } from 'lucide-react';
+import { useToast } from '../../../context/ToastContext';
 
 const VerifyEmailPage = () => {
   const navigate = useNavigate();
+  const toast = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleSubmit = async (data) => {
+    setIsProcessing(true);
     const response = await postRequest('/auth/verify-email', data);
+    setIsProcessing(false);
+
     if (response?.success) {
+      toast.success("Email verified successfully!");
       navigate('/dashboard');
+    } else {
+      toast.error(response?.message || "Invalid or expired OTP");
     }
     return response;
   };
@@ -18,9 +29,7 @@ const VerifyEmailPage = () => {
       <div className="w-full max-w-md bg-white border-4 border-black p-6 sm:p-8 shadow-[8px_8px_0_0_#000]">
         
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-black text-white font-black text-xs uppercase tracking-widest mb-4">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-          </svg>
+          <Zap className="w-3.5 h-3.5 fill-white" />
           ShareFlow
         </div>
 
@@ -29,7 +38,7 @@ const VerifyEmailPage = () => {
           Enter the 4-digit code sent to your email
         </p>
 
-        <VerifyEmailForm onSubmit={handleSubmit} />
+        <VerifyEmailForm onSubmit={handleSubmit} isProcessing={isProcessing} />
 
         <div className="mt-6 pt-4 border-t-2 border-black/10 text-center">
           <Link 

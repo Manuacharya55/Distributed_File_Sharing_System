@@ -6,9 +6,12 @@ import { postRequest } from "../../../api/api";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { setFormErrors } from "../../../utils/formErrors";
+import { Zap, Network, ShieldCheck } from "lucide-react";
+import { useToast } from "../../../context/ToastContext";
 
 const LoginPage = () => {
   const { setToken } = useAuth();
+  const toast = useToast();
   const {
     register,
     handleSubmit,
@@ -24,9 +27,11 @@ const LoginPage = () => {
     const response = await postRequest("/auth/login", data);
     if (!response?.success) {
       setFormErrors(setError, response, "email");
+      toast.error(response?.message || "Login failed");
       return;
     }
     setToken(response.data.token);
+    toast.success("Logged in successfully");
     navigate("/");
   };
 
@@ -38,9 +43,7 @@ const LoginPage = () => {
         <div className="w-full md:w-5/12 bg-[#FF90E8] p-6 sm:p-8 border-b-4 md:border-b-0 md:border-r-4 border-black flex flex-col justify-between">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-black text-white font-black text-xs uppercase tracking-widest mb-4">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-              </svg>
+              <Zap className="w-3.5 h-3.5 fill-white" />
               ShareFlow
             </div>
             
@@ -54,11 +57,11 @@ const LoginPage = () => {
 
           <div className="flex flex-col gap-2.5">
             <div className="p-2.5 bg-white border-2 border-black font-bold text-xs uppercase shadow-[2px_2px_0_0_#000] flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <Network className="w-4 h-4 text-emerald-600" />
               Fast & Distributed Network
             </div>
             <div className="p-2.5 bg-white border-2 border-black font-bold text-xs uppercase shadow-[2px_2px_0_0_#000] flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+              <ShieldCheck className="w-4 h-4 text-indigo-600" />
               End-to-End File Privacy
             </div>
           </div>

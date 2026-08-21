@@ -6,6 +6,8 @@ import { postRequest } from "../../../api/api";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { setFormErrors } from "../../../utils/formErrors";
+import { Zap, HardDrive, KeyRound } from "lucide-react";
+import { useToast } from "../../../context/ToastContext";
 
 const RegisterPage = () => {
   const {
@@ -17,15 +19,18 @@ const RegisterPage = () => {
     resolver: zodResolver(registerSchema),
   });
   const { setToken } = useAuth();
+  const toast = useToast();
   const navigate = useNavigate();
 
   const handleRegisterUser = async (data) => {
     const response = await postRequest("/auth/register", data);
     if (!response?.success) {
       setFormErrors(setError, response, "email");
+      toast.error(response?.message || "Registration failed");
       return;
     }
     setToken(response.data.token);
+    toast.success("Account registered! Please verify your email.");
     navigate("/verify-email");
   };
 
@@ -37,9 +42,7 @@ const RegisterPage = () => {
         <div className="w-full md:w-5/12 bg-[#FFDE59] p-6 sm:p-8 border-b-4 md:border-b-0 md:border-l-4 border-black flex flex-col justify-between">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-black text-white font-black text-xs uppercase tracking-widest mb-4">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-              </svg>
+              <Zap className="w-3.5 h-3.5 fill-white" />
               ShareFlow
             </div>
             
@@ -53,11 +56,11 @@ const RegisterPage = () => {
 
           <div className="flex flex-col gap-2.5">
             <div className="p-2.5 bg-white border-2 border-black font-bold text-xs uppercase shadow-[2px_2px_0_0_#000] flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-pink-500"></span>
+              <HardDrive className="w-4 h-4 text-pink-600" />
               Unlimited File Storage
             </div>
             <div className="p-2.5 bg-white border-2 border-black font-bold text-xs uppercase shadow-[2px_2px_0_0_#000] flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <KeyRound className="w-4 h-4 text-emerald-600" />
               Secure OTP Verification
             </div>
           </div>

@@ -8,6 +8,7 @@ import PendingState from '../../../components/shared/PendingState';
 import ErrorState from '../../../components/shared/ErrorState';
 import ProfileSidebar from '../components/ProfileSidebar';
 import ProfileDetails from '../components/ProfileDetails';
+import { useToast } from '../../../context/ToastContext';
 
 const fetchProfile = async () => {
   const response = await getRequest('/user/profile');
@@ -19,6 +20,7 @@ const fetchProfile = async () => {
 
 const ProfilePage = () => {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isEditingPassword, setIsEditingPassword] = useState(false);
 
@@ -32,6 +34,7 @@ const ProfilePage = () => {
   const handleSave = async (data) => {
     const response = await patchRequest('/user/profile', data);
     if (response?.success === false) {
+      toast.error(response.message || "Failed to update profile");
       return response;
     }
     
@@ -40,6 +43,7 @@ const ProfilePage = () => {
       queryClient.setQueryData(['profile'], updatedProfile);
     }
     
+    toast.success("Profile updated successfully");
     setIsEditingProfile(false);
     return response;
   };
@@ -47,8 +51,10 @@ const ProfilePage = () => {
   const handlePasswordSave = async (passwordData) => {
     const response = await patchRequest('/user/password', passwordData);
     if (response?.success === false) {
+      toast.error(response.message || "Failed to update password");
       return response;
     }
+    toast.success("Password changed successfully");
     setIsEditingPassword(false);
     return response;
   };
@@ -63,10 +69,11 @@ const ProfilePage = () => {
     const response = await patchMultipartRequest('/user/update-avatar', formData);
     
     if (response?.success === false) {
-      alert(response.message || "Failed to upload avatar");
+      toast.error(response.message || "Failed to upload avatar");
       return;
     }
 
+    toast.success("Avatar updated successfully");
     const updatedProfile = response?.data?.data?.user || response?.data?.user || response?.data;
     if (updatedProfile) {
       queryClient.setQueryData(['profile'], updatedProfile);

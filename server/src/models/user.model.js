@@ -19,6 +19,14 @@ const userSchema = new Schema({
     isVerified: {
         type: Boolean,
         default: false
+    },
+    usedStorage: {
+        type: Number,
+        default: 0
+    },
+    storageLimit: {
+        type: Number,
+        default: 1073741824 // 1 GB in bytes
     }
 }, { timestamps: true });
 

@@ -1,6 +1,7 @@
 import React from 'react';
+import Button from './Button';
 
-const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel }) => {
+const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, isProcessing = false }) => {
   if (!isOpen) return null;
 
   return (
@@ -9,19 +10,21 @@ const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel }) => {
         <h2 className="text-3xl font-black uppercase mb-4">{title}</h2>
         <p className="text-lg font-bold mb-8">{message}</p>
         
-        <div className="flex gap-4 justify-end">
+        <div className="flex gap-4 justify-end items-center">
           <button 
             onClick={onCancel}
-            className="px-6 py-2 bg-white border-4 border-black text-black font-black uppercase hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[4px_4px_0_0_#000] active:shadow-none active:translate-y-[4px] active:translate-x-[4px] transition-all"
+            disabled={isProcessing}
+            className="px-6 py-3.5 bg-white border-4 border-black text-black font-black uppercase hover:bg-gray-100 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
-          <button 
-            onClick={onConfirm}
-            className="px-6 py-2 bg-red-500 border-4 border-black text-white font-black uppercase hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[4px_4px_0_0_#000] active:shadow-none active:translate-y-[4px] active:translate-x-[4px] transition-all"
-          >
-            Confirm
-          </button>
+          <Button 
+            name="Confirm"
+            isProcessing={isProcessing}
+            handleClick={onConfirm}
+            type="button"
+            className="w-auto px-6 !bg-red-500 hover:!bg-red-600"
+          />
         </div>
       </div>
     </div>
