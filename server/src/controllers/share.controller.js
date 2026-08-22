@@ -7,9 +7,9 @@ import { getPresignedGetUrl } from "../utils/s3.helper.js";
 
 const DEFAULT_EXPIRY_SECONDS = 3600; // 1 hour for presigned access
 
-/**
- * Toggle MEGA-style public link sharing for a file (ON / OFF)
- */
+//========================================================
+// toggles share link like mega
+//========================================================
 export const toggleFileShare = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { isShareable } = req.body;
@@ -38,9 +38,11 @@ export const toggleFileShare = asyncHandler(async (req, res) => {
     }, file.isShareable ? "Public link sharing enabled" : "Public link sharing disabled"));
 });
 
-/**
- * Public access endpoint to fetch shared file (No login / No password required)
- */
+
+
+//========================================================
+// gets shared file with presigned url
+//========================================================
 export const getPublicSharedFile = asyncHandler(async (req, res) => {
     const { shareToken } = req.params;
 

@@ -5,7 +5,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { compareHashedPassword, hashPassword } from "../utils/argon.js";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { awsS3Bucket } from "../config/aws.js";
-import path from 'path';
+
 
 export const getProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id).select("-password");

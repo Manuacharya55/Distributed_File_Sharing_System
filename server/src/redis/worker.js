@@ -2,6 +2,7 @@ import { Worker } from "bullmq";
 import { connection } from "./connection.js";
 import { sendMail } from "../services/email.service.js";
 import "./folderCleanup.worker.js";
+import { logger } from "../utils/logger.js";
 
 const worker = new Worker("email-queue", async (job) => {
   const { email, subject, htmlTemplate } = job.data;
@@ -9,9 +10,9 @@ const worker = new Worker("email-queue", async (job) => {
 }, { connection });
 
 worker.on("completed", (job) => {
-  console.log(`Job ${job.id} completed successfully`);
+  logger.info(`[EmailWorker] Job ${job.id} completed successfully`);
 });
 
 worker.on("failed", (job, err) => {
-  console.log(`Job ${job.id} failed with error: ${err}`);
+  logger.error(`[EmailWorker] Job ${job.id} failed`, err);
 });

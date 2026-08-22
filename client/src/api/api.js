@@ -25,70 +25,52 @@ apiClient.interceptors.request.use(
     }
 );
 
-let isRefreshing = false;
-let failedQueue = [];
+let refreshPromise = null;
 
-const processQueue = (error, token = null) => {
-    failedQueue.forEach(prom => {
-        if (error) {
-            prom.reject(error);
-        } else {
-            prom.resolve(token);
-        }
-    });
-
-    failedQueue = [];
+const getRefreshedToken = () => {
+    if (!refreshPromise) {
+        refreshPromise = apiClient.get('/auth/refresh-token')
+            .then((response) => {
+                const newToken = response?.data?.data?.token;
+                if (!newToken) throw new Error('No token in refresh response');
+                setToken(newToken);
+                return newToken;
+            })
+            .finally(() => {
+                refreshPromise = null;
+            });
+    }
+    return refreshPromise;
 };
 
 // Response interceptor to handle auto token refreshing
 apiClient.interceptors.response.use(
-    (response) => {
-        return response;
-    },
+    (response) => response,
     async (error) => {
         const originalRequest = error.config;
-        if (error.response && error.response.status === 401 && error.response.data?.message === "Token Expired" && !originalRequest._retry) {
-            if (originalRequest.url.includes('/auth/refresh-token')) {
-                return Promise.reject(error);
-            }
 
-            if (isRefreshing) {
-                return new Promise(function (resolve, reject) {
-                    failedQueue.push({ resolve, reject });
-                }).then(token => {
-                    originalRequest.headers.Authorization = 'Bearer ' + token;
-                    return apiClient(originalRequest);
-                }).catch(err => {
-                    return Promise.reject(err);
-                });
-            }
-
+        if (
+            error.response?.status === 401 &&
+            error.response.data?.message === "Token Expired" &&
+            !originalRequest._retry &&
+            !originalRequest.url.includes('/auth/refresh-token')
+        ) {
             originalRequest._retry = true;
-            isRefreshing = true;
-
             try {
-                const response = await apiClient.get('/auth/refresh-token');
-                if (response.data && response.data.data && response.data.data.token) {
-                    const newToken = response.data.data.token;
-                    setToken(newToken);
-
-                    originalRequest.headers.Authorization = `Bearer ${newToken}`;
-                    processQueue(null, newToken);
-                    return apiClient(originalRequest);
-                }
+                const newToken = await getRefreshedToken();
+                originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                return apiClient(originalRequest);
             } catch (refreshError) {
-                processQueue(refreshError, null);
                 setToken(null);
                 window.location.href = '/login';
                 return Promise.reject(refreshError);
-            } finally {
-                isRefreshing = false;
             }
         }
 
         return Promise.reject(error);
     }
 );
+
 
 const extractErrorMessage = (error) => {
     const message = error?.response?.data?.message || error?.message || "An unexpected error occurred";

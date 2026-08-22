@@ -11,9 +11,9 @@ import { getPresignedUploadUrl as s3GetPresignedUploadUrl, getPresignedGetUrl, d
 
 const DEFAULT_EXPIRY_SECONDS = 3600; // 1 hour for download/preview URLs
 
-/**
- * Request a Presigned S3 PUT URL for direct frontend-to-S3 upload
- */
+//========================================================
+// creates a magic link that can be used to upload files directly to S3
+//========================================================
 export const getPresignedUploadUrl = asyncHandler(async (req, res) => {
     const { filename, mimeType, size, folder } = req.body;
     const userId = req.user._id;
@@ -58,9 +58,11 @@ export const getPresignedUploadUrl = asyncHandler(async (req, res) => {
     }, "Presigned upload URL generated successfully"));
 });
 
-/**
- * Confirm upload after frontend successfully PUTs file to AWS S3
- */
+
+
+//========================================================
+// confirms the upload and saves the file to the database
+//========================================================
 export const confirmUpload = asyncHandler(async (req, res) => {
     const { key, originalName, mimeType, size, folder } = req.body;
     const userId = req.user._id;
@@ -105,9 +107,11 @@ export const confirmUpload = asyncHandler(async (req, res) => {
     res.status(201).json(new ApiSuccess(201, fileResponse, "File uploaded and confirmed successfully"));
 });
 
-/**
- * Get a single file with dynamic presigned URLs
- */
+
+
+//========================================================
+// gets a single file with dynamic presigned URLs
+//========================================================
 export const getSingleFile = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const file = await File.findOne({ _id: id, isDeleted: false });
@@ -130,9 +134,11 @@ export const getSingleFile = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiSuccess(200, result, "File retrieved successfully"));
 });
 
-/**
- * Get all active files for user (with optional search and folder filter)
- */
+
+
+//========================================================
+// gets all active files for user (with optional search and folder filter)
+//========================================================
 export const getAllFiles = asyncHandler(async (req, res) => {
     const query = { user: req.user._id, isDeleted: false };
     
@@ -161,9 +167,12 @@ export const getAllFiles = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiSuccess(200, { files: filesWithSignedUrls, pagination }, "Files retrieved successfully"));
 });
 
-/**
- * Soft delete file (Move to Trash)
- */
+
+
+
+//========================================================
+// soft delete file (move to trash)
+//========================================================
 export const deleteFile = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const file = await File.findOne({ _id: id, user: req.user._id });
@@ -179,9 +188,11 @@ export const deleteFile = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiSuccess(200, null, "File moved to trash successfully"));
 });
 
-/**
- * Restore soft-deleted file
- */
+
+
+//========================================================
+// restores soft-deleted file from trash
+//========================================================
 export const restoreFile = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const file = await File.findOne({ _id: id, user: req.user._id, isDeleted: true });
@@ -197,9 +208,11 @@ export const restoreFile = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiSuccess(200, file, "File restored successfully"));
 });
 
-/**
- * Permanently delete file from Trash
- */
+
+
+//========================================================
+// permanently delete file from trash
+//========================================================
 export const permanentDeleteFile = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const file = await File.findOne({ _id: id, user: req.user._id });

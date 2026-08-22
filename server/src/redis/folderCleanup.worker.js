@@ -4,12 +4,15 @@ import Folder from "../models/folder.model.js";
 import File from "../models/file.model.js";
 import User from "../models/user.model.js";
 import { deleteS3ObjectsBatch } from "../utils/s3.helper.js";
+import { logger } from "../utils/logger.js";
+
 
 export const folderCleanupWorker = new Worker(
     "folder-cleanup-queue",
     async (job) => {
         const { folderId, userId } = job.data;
-        console.log(`[FolderCleanupWorker] Processing cleanup for folder ${folderId} of user ${userId}`);
+
+        logger.info(`[FolderCleanupWorker] Processing cleanup for folder ${folderId} of user ${userId}`);
 
         try {
             // 1. Find all files located inside this folder
@@ -44,10 +47,10 @@ export const folderCleanupWorker = new Worker(
                 }
             }
 
-            console.log(`[FolderCleanupWorker] Successfully cleaned up folder ${folderId}, deleted ${files.length} files (${totalFreedBytes} bytes freed)`);
+            logger.info(`[FolderCleanupWorker] Successfully cleaned up folder ${folderId}, deleted ${files.length} files (${totalFreedBytes} bytes freed)`);
             return { folderId, cleanedFiles: files.length, totalFreedBytes };
         } catch (error) {
-            console.error(`[FolderCleanupWorker] Error cleaning up folder ${folderId}:`, error);
+            logger.error(`[FolderCleanupWorker] Error cleaning up folder ${folderId}:`, error);
             throw error;
         }
     },
@@ -55,10 +58,10 @@ export const folderCleanupWorker = new Worker(
 );
 
 folderCleanupWorker.on("completed", (job) => {
-    console.log(`Folder cleanup job ${job.id} completed`);
+    logger.info(`[FolderCleanupWorker] Folder cleanup job ${job.id} completed`);
 });
 
 folderCleanupWorker.on("failed", (job, err) => {
-    console.error(`Folder cleanup job ${job.id} failed:`, err);
+    logger.error(`[FolderCleanupWorker] Folder cleanup job ${job.id} failed:`, err);
 });
 

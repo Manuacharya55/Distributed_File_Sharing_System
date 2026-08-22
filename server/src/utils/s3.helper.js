@@ -5,9 +5,11 @@ import { awsS3Bucket } from "../config/aws.js";
 const DEFAULT_UPLOAD_EXPIRY = 15 * 60; // 15 minutes
 const DEFAULT_DOWNLOAD_EXPIRY = 60 * 60; // 1 hour
 
-/**
- * Generates a presigned PUT URL for direct client-to-S3 upload
- */
+//==============================================================================================
+// Generates a presigned PUT URL for direct client-to-S3 upload
+// accepts key -> unique key generated , mimeType , expiresIn -> optional -> default is 15 minutes
+// returns -> { url, key }
+//===============================================================================================
 export const getPresignedUploadUrl = async (key, mimeType, expiresIn = DEFAULT_UPLOAD_EXPIRY) => {
 
     const command = new PutObjectCommand({
@@ -23,10 +25,14 @@ export const getPresignedUploadUrl = async (key, mimeType, expiresIn = DEFAULT_U
     return { url, key };
 };
 
-/**
- * Generates a presigned GET URL for viewing or downloading private S3 objects
- */
 
+
+//==============================================================================================
+// Generates a presigned GET URL for viewing or downloading private S3 objects
+// accepts key -> unique key generated , originalName -> optional -> default is null, 
+// isDownload -> optional -> default is false, expiresIn -> optional -> default is 1 hour
+// returns -> { url }
+//==============================================================================================
 export const getPresignedGetUrl = async (key, originalName = null, isDownload = false, expiresIn = DEFAULT_DOWNLOAD_EXPIRY) => {
     const commandParams = {
         Bucket: process.env.AWS_BUCKET_NAME,
@@ -44,9 +50,13 @@ export const getPresignedGetUrl = async (key, originalName = null, isDownload = 
     return url;
 };
 
-/**
- * Deletes a single object from S3
- */
+
+
+//==============================================================================================
+// Deletes a single object from S3
+// accepts key -> unique key generated , mimeType , expiresIn -> optional -> default is 15 minutes
+// returns -> { url, key }
+//===============================================================================================
 export const deleteS3Object = async (key) => {
     if (!key) return;
     const command = new DeleteObjectCommand({
@@ -56,9 +66,13 @@ export const deleteS3Object = async (key) => {
     return await awsS3Bucket.send(command);
 };
 
-/**
- * Deletes multiple objects from S3 in batch
- */
+
+
+//==============================================================================================
+// Deletes multiple objects from S3 in batch
+// accepts key -> unique key generated , mimeType , expiresIn -> optional -> default is 15 minutes
+// returns -> { url, key }
+//==============================================================================================
 export const deleteS3ObjectsBatch = async (keys = []) => {
     if (!keys || keys.length === 0) return;
     

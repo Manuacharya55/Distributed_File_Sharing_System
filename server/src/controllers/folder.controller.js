@@ -109,9 +109,10 @@ export const updateFolder = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiSuccess(200, folder, "Folder updated successfully"));
 });
 
-/**
- * Delete folder: marks soft-deleted and triggers background cascade cleanup via BullMQ
- */
+
+//========================================================
+// soft-deletes the folder and triggers a background cascade cleanup worker to remove all files/folders within it
+//========================================================
 export const deleteFolder = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const userId = req.user._id;
@@ -136,9 +137,11 @@ export const deleteFolder = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiSuccess(200, null, "Folder deletion queued in background"));
 });
 
-/**
- * Get all Trash items (both soft-deleted files and folders)
- */
+
+
+//========================================================
+// retrieves all soft-deleted items (files and folders) for the user from trash
+//========================================================
 export const getTrashItems = asyncHandler(async (req, res) => {
     const userId = req.user._id;
 
@@ -150,9 +153,11 @@ export const getTrashItems = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiSuccess(200, { folders, files }, "Trash items retrieved successfully"));
 });
 
-/**
- * Empty all items from Trash
- */
+
+
+//========================================================
+// empties the entire trash by permanently deleting all files and folders and their corresponding S3 objects
+//========================================================
 export const emptyTrash = asyncHandler(async (req, res) => {
     const userId = req.user._id;
 
