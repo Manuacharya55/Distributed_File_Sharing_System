@@ -25,5 +25,5 @@ export const loginSchema = z.object({
 export const verifyotpSchema = z.object({
   otp: z
     .string({ message: "OTP cannot be empty" })
-    .length(4, "OTP must be exactly 4 characters"),
+    .length(6, "OTP must be exactly 6 characters"),
 });

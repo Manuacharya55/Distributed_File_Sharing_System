@@ -32,31 +32,31 @@ const ProfilePage = () => {
   });
 
   const handleSave = async (data) => {
-    const response = await patchRequest('/user/profile', data);
-    if (response?.success === false) {
-      toast.error(response.message || "Failed to update profile");
+    try {
+      const response = await patchRequest('/user/profile', data);
+      const updatedProfile = response?.data?.data?.user || response?.data?.user || response?.data;
+      if (updatedProfile) {
+        queryClient.setQueryData(['profile'], updatedProfile);
+      }
+      toast.success("Profile updated successfully");
+      setIsEditingProfile(false);
       return response;
+    } catch (error) {
+      toast.error(error.message || "Failed to update profile");
+      return { success: false, message: error.message, errors: error.errors };
     }
-    
-    const updatedProfile = response?.data?.data?.user || response?.data?.user || response?.data;
-    if (updatedProfile) {
-      queryClient.setQueryData(['profile'], updatedProfile);
-    }
-    
-    toast.success("Profile updated successfully");
-    setIsEditingProfile(false);
-    return response;
   };
 
   const handlePasswordSave = async (passwordData) => {
-    const response = await patchRequest('/user/password', passwordData);
-    if (response?.success === false) {
-      toast.error(response.message || "Failed to update password");
+    try {
+      const response = await patchRequest('/user/password', passwordData);
+      toast.success("Password changed successfully");
+      setIsEditingPassword(false);
       return response;
+    } catch (error) {
+      toast.error(error.message || "Failed to update password");
+      return { success: false, message: error.message, errors: error.errors };
     }
-    toast.success("Password changed successfully");
-    setIsEditingPassword(false);
-    return response;
   };
 
   const handleAvatarUpload = async (e) => {
@@ -66,17 +66,15 @@ const ProfilePage = () => {
     const formData = new FormData();
     formData.append("avatar", file);
 
-    const response = await patchMultipartRequest('/user/update-avatar', formData);
-    
-    if (response?.success === false) {
-      toast.error(response.message || "Failed to upload avatar");
-      return;
-    }
-
-    toast.success("Avatar updated successfully");
-    const updatedProfile = response?.data?.data?.user || response?.data?.user || response?.data;
-    if (updatedProfile) {
-      queryClient.setQueryData(['profile'], updatedProfile);
+    try {
+      const response = await patchMultipartRequest('/user/update-avatar', formData);
+      toast.success("Avatar updated successfully");
+      const updatedProfile = response?.data?.data?.user || response?.data?.user || response?.data;
+      if (updatedProfile) {
+        queryClient.setQueryData(['profile'], updatedProfile);
+      }
+    } catch (error) {
+      toast.error(error.message || "Failed to upload avatar");
     }
   };
 

@@ -23,15 +23,20 @@ const RegisterPage = () => {
   const navigate = useNavigate();
 
   const handleRegisterUser = async (data) => {
-    const response = await postRequest("/auth/register", data);
-    if (!response?.success) {
-      setFormErrors(setError, response, "email");
-      toast.error(response?.message || "Registration failed");
-      return;
+    try {
+      const response = await postRequest("/auth/register", data);
+      if (!response?.success) {
+        setFormErrors(setError, response, "email");
+        toast.error(response?.message || "Registration failed");
+        return;
+      }
+      setToken(response.data.token);
+      toast.success("Account registered! Please verify your email.");
+      navigate("/verify-email");
+    } catch (error) {
+      setFormErrors(setError, error, "email");
+      toast.error(error?.message || "Registration failed");
     }
-    setToken(response.data.token);
-    toast.success("Account registered! Please verify your email.");
-    navigate("/verify-email");
   };
 
   return (

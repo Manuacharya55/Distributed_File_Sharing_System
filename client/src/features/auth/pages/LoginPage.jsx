@@ -24,15 +24,20 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   const handleLoginUser = async (data) => {
-    const response = await postRequest("/auth/login", data);
-    if (!response?.success) {
-      setFormErrors(setError, response, "email");
-      toast.error(response?.message || "Login failed");
-      return;
+    try {
+      const response = await postRequest("/auth/login", data);
+      if (!response?.success) {
+        setFormErrors(setError, response, "email");
+        toast.error(response?.message || "Login failed");
+        return;
+      }
+      setToken(response.data.token);
+      toast.success("Logged in successfully");
+      navigate("/");
+    } catch (error) {
+      setFormErrors(setError, error, "email");
+      toast.error(error?.message || "Login failed");
     }
-    setToken(response.data.token);
-    toast.success("Logged in successfully");
-    navigate("/");
   };
 
   return (

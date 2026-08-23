@@ -12,16 +12,22 @@ const VerifyEmailPage = () => {
 
   const handleSubmit = async (data) => {
     setIsProcessing(true);
-    const response = await postRequest('/auth/verify-email', data);
-    setIsProcessing(false);
-
-    if (response?.success) {
-      toast.success("Email verified successfully!");
-      navigate('/dashboard');
-    } else {
-      toast.error(response?.message || "Invalid or expired OTP");
+    try {
+      const response = await postRequest('/auth/verify-email', data);
+      if (response?.success) {
+        toast.success("Email verified successfully!");
+        navigate('/dashboard');
+        return response;
+      } else {
+        toast.error(response?.message || "Invalid or expired OTP");
+        return response;
+      }
+    } catch (error) {
+      toast.error(error?.message || "Invalid or expired OTP");
+      return { success: false, message: error?.message, errors: error?.errors };
+    } finally {
+      setIsProcessing(false);
     }
-    return response;
   };
 
   return (
